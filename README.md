@@ -11,8 +11,6 @@
 
 **A Stunning Full-Stack Portfolio Showcasing The Artistry Of Pranjal, A Visionary Visual Storyteller**
 
-[🌐 Live Demo](https://pranjal-portfolio.com) • [📧 Contact](mailto:pranjal@portfolio.com) • [📱 Admin Panel](https://admin.pranjal-portfolio.com)
-
 </div>
 
 ---
@@ -248,21 +246,4 @@ This Project Is Licensed Under The MIT License - See The [LICENSE](LICENSE) File
 
 **© 2025 Pranjal Portfolio. All Rights Reserved.**
 
-## 📞 Contact
-
-<div align="center">
-
-**Pranjal**  
-*Visual Storyteller & Creative Professional*
-
-📧 **Email**: pranjal@portfolio.com  
-🌐 **Website**: [https://pranjal-portfolio.com](https://pranjal-portfolio.com)  
-💼 **LinkedIn**: [Pranjal's LinkedIn](https://linkedin.com/in/pranjal)  
-📸 **Instagram**: [@pranjal_creates](https://instagram.com/pranjal_creates)
-
----
-
 **🎨 This Portfolio Showcases The Work Of Pranjal, A Talented Photographer, Videographer, And Video Editor. All Content And Media Belongs To Pranjal And Is Protected Under Copyright Law.**
-
-</div></content>
-<parameter name="filePath">c:\Users\i8o8i\Desktop\PRANJAL-PORTFOLIO-MAIN\README.md
