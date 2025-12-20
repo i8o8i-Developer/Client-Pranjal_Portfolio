@@ -518,7 +518,7 @@
   border: 1px solid var(--admin-border);
   border-radius: var(--admin-radius-lg);
   width: 100%;
-  max-width: 520px;
+  max-width: 650px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--admin-shadow-lg);
