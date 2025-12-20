@@ -1,0 +1,153 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { getVideos, API_URL } from '../services/Api.js';
+import './Photography.css';
+
+// Helper to get full URL for images
+const getFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${API_URL}${url}`;
+};
+
+export default function Videography() {
+  const [videos, setVideos] = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadVideos();
+  }, []);
+
+  const loadVideos = async () => {
+    try {
+      const response = await getVideos();
+      setVideos(response.data);
+    } catch (error) {
+      console.error('Error Loading Videos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEmbedUrl = (video) => {
+    const { video_type, video_url } = video;
+
+    if (video_type === 'youtube') {
+      const videoId = video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+      return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : video_url;
+    } else if (video_type === 'gdrive') {
+      const fileId = video_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileId) {
+        return `https://drive.google.com/file/d/${fileId[1]}/preview`;
+      }
+      const directId = video_url.match(/id=([a-zA-Z0-9_-]+)/);
+      if (directId) {
+        return `https://drive.google.com/file/d/${directId[1]}/preview`;
+      }
+      return video_url;
+    }
+    // For direct/upload types, return full URL
+    return getFullUrl(video_url);
+  };
+
+  const isEmbeddable = (videoType) => {
+    return videoType === 'youtube' || videoType === 'gdrive';
+  };
+
+  return (
+    <div className="videography-page">
+      <section className="page-hero">
+        <div className="container">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            Videography
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            Cinematic Storytelling Through Motion
+          </motion.p>
+        </div>
+      </section>
+
+      <section className="gallery-section">
+        <div className="container">
+          {loading ? (
+            <div className="loading">
+              <div className="spinner"></div>
+            </div>
+          ) : (
+            <div className="photo-grid">
+              {videos.map((video, index) => (
+                <motion.div
+                  key={video._id}
+                  className="photo-item"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -5 }}
+                  onClick={() => setSelectedVideo(video)}
+                >
+                  {video.thumbnail_url ? (
+                    <img src={getFullUrl(video.thumbnail_url)} alt={video.title} loading="lazy" />
+                  ) : (
+                    <div className="video-placeholder">
+                      <span>▶</span>
+                    </div>
+                  )}
+                  <div className="photo-overlay">
+                    <h3>{video.title}</h3>
+                    <p>{video.video_type}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {selectedVideo && (
+        <div className="modal" onClick={() => setSelectedVideo(null)}>
+          <div className="modal-content video-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedVideo(null)}>
+              ×
+            </button>
+            <div className="video-wrapper">
+              {isEmbeddable(selectedVideo.video_type) ? (
+                <iframe
+                  src={getEmbedUrl(selectedVideo)}
+                  title={selectedVideo.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video controls src={getFullUrl(selectedVideo.video_url)} />
+              )}
+            </div>
+            <div className="modal-info">
+              <h2>{selectedVideo.title}</h2>
+              <p>{selectedVideo.description}</p>
+              {selectedVideo.tags && selectedVideo.tags.length > 0 && (
+                <div className="tags">
+                  {selectedVideo.tags.map((tag, index) => (
+                    <span key={index} className="tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
