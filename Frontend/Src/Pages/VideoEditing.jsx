@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { getEdits, getFeaturedEdit, API_URL } from '../services/Api.js';
 import './Photography.css';
 
-// Helper to get full URL
+// Helper To Get Full URL
 const getFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -52,7 +52,7 @@ export default function VideoEditing() {
       }
       return videoUrl;
     }
-    // For direct URLs, return full URL
+    // For Direct URLs, Return Full URL
     return getFullUrl(videoUrl);
   };
 
@@ -158,23 +158,29 @@ export default function VideoEditing() {
             <button className="modal-close" onClick={() => setSelectedEdit(null)}>
               ×
             </button>
-            <div className="video-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-              {isEmbeddable(selectedEdit.video_url) ? (
-                <iframe
-                  src={getEmbedUrl(selectedEdit.video_url)}
-                  title={selectedEdit.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ width: '700px', height: '400px', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
-                />
-              ) : (
-                <video
-                  controls
-                  src={getFullUrl(selectedEdit.video_url)}
-                  style={{ width: '700px', height: '400px', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
-                />
-              )}
+            <div className="modal-video-center">
+              <div className="modal-video-aspect">
+                {isEmbeddable(selectedEdit.video_url) ? (
+                  <iframe
+                    src={getEmbedUrl(selectedEdit.video_url)}
+                    title={selectedEdit.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
+                  />
+                ) : selectedEdit.video_url ? (
+                  <video
+                    controls
+                    src={getFullUrl(selectedEdit.video_url)}
+                    style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
+                  />
+                ) : (
+                  <div className="video-placeholder-large">
+                    <span>▶</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="modal-info">
               <h2 style={{ fontSize: '2.2rem', marginBottom: '1rem' }}>{selectedEdit.title}</h2>

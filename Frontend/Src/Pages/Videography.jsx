@@ -18,7 +18,7 @@ import { motion } from 'framer-motion';
 import { getVideos, API_URL } from '../services/Api.js';
 import './Photography.css';
 
-// Helper to get full URL for images
+// Helper To Get Full URL For Images
 const getFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -62,7 +62,7 @@ export default function Videography() {
       }
       return video_url;
     }
-    // For direct/upload types, return full URL
+    // For Direct/Upload Types, Return Full URL
     return getFullUrl(video_url);
   };
 
