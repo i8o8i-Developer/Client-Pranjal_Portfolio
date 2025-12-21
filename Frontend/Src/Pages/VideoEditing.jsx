@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getEdits, getFeaturedEdit, API_URL } from '../services/Api.js';
+import { getEdits, getFeaturedEdit, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Photography.css';
 
 // Helper To Get Full URL
@@ -8,6 +8,60 @@ const getFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return `${API_URL}${url}`;
+};
+
+// Helper To Convert YouTube or Google Drive URL To Embed Format
+const getEmbedUrl = (videoUrl) => {
+  if (!videoUrl) return null;
+  
+  if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+    const videoId = videoUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : videoUrl;
+  } else if (videoUrl.includes('drive.google.com')) {
+    const fileId = videoUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileId) {
+      return `https://drive.google.com/file/d/${fileId[1]}/preview`;
+    }
+    const directId = videoUrl.match(/id=([a-zA-Z0-9_-]+)/);
+    if (directId) {
+      return `https://drive.google.com/file/d/${directId[1]}/preview`;
+    }
+    return videoUrl;
+  }
+  // For Direct URLs, Return Full URL
+  return getFullUrl(videoUrl);
+};
+
+// Helper To Get Thumbnail URL With Google Drive Support
+const getThumbnailUrl = (edit) => {
+  // Priority: drive_file_id > thumbnail_url > fallback
+  if (edit.drive_file_id) {
+    return getGoogleDriveUrls.thumbnail(edit.drive_file_id);
+  }
+  if (edit.thumbnail_url) {
+    return getFullUrl(edit.thumbnail_url);
+  }
+  return null;
+};
+
+// Helper To Get Embed URL With Google Drive Support
+const getVideoEmbedUrl = (edit) => {
+  // Priority: drive_file_id > video_url
+  if (edit.drive_file_id) {
+    return getGoogleDriveUrls.embed(edit.drive_file_id);
+  }
+  if (edit.video_url) {
+    return getEmbedUrl(edit.video_url);
+  }
+  return null;
+};
+
+// Helper To Get Full Video URL With Google Drive Support
+const getFullVideoUrl = (edit) => {
+  if (edit.drive_file_id) {
+    return getGoogleDriveUrls.direct(edit.drive_file_id);
+  }
+  return getFullUrl(edit.video_url);
 };
 
 export default function VideoEditing() {
@@ -37,27 +91,8 @@ export default function VideoEditing() {
     }
   };
 
-  const getEmbedUrl = (videoUrl) => {
-    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-      const videoId = videoUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
-      return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : videoUrl;
-    } else if (videoUrl.includes('drive.google.com')) {
-      const fileId = videoUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (fileId) {
-        return `https://drive.google.com/file/d/${fileId[1]}/preview`;
-      }
-      const directId = videoUrl.match(/id=([a-zA-Z0-9_-]+)/);
-      if (directId) {
-        return `https://drive.google.com/file/d/${directId[1]}/preview`;
-      }
-      return videoUrl;
-    }
-    // For Direct URLs, Return Full URL
-    return getFullUrl(videoUrl);
-  };
-
   const isEmbeddable = (videoUrl) => {
-    return videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('drive.google.com');
+    return videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('drive.google.com'));
   };
 
   return (
@@ -93,7 +128,7 @@ export default function VideoEditing() {
               <h2>Featured Showreel</h2>
               <div className="video-wrapper">
                 <iframe
-                  src={getEmbedUrl(featuredEdit.video_url)}
+                  src={getVideoEmbedUrl(featuredEdit)}
                   title={featuredEdit.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -130,24 +165,24 @@ export default function VideoEditing() {
                     whileHover={{ y: -5 }}
                     onClick={() => setSelectedEdit(edit)}
                   >
-                    {edit.thumbnail_url ? (
-                      <img src={getFullUrl(edit.thumbnail_url)} alt={edit.title} loading="lazy" />
-                    ) : edit.video_url ? (
-                      isEmbeddable(edit.video_url) ? (
+                    {getThumbnailUrl(edit) ? (
+                      <img src={getThumbnailUrl(edit)} alt={edit.title} loading="lazy" />
+                    ) : (edit.video_url || edit.drive_file_id) ? (
+                      isEmbeddable(edit.video_url) || edit.drive_file_id ? (
                         <iframe
-                          src={getEmbedUrl(edit.video_url)}
+                          src={getVideoEmbedUrl(edit)}
                           title={edit.title}
-                          style={{ width: '100%', height: '180px', borderRadius: '10px', background: '#222', border: 'none' }}
+                          style={{ width: '100%', height: '180px', borderRadius: '10px', background: '#222', border: 'none', pointerEvents: 'none' }}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
                       ) : (
                         <video
                           className="video-preview"
-                          src={getFullUrl(edit.video_url)}
+                          src={getFullVideoUrl(edit)}
                           controls={false}
                           preload="metadata"
-                          style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px' }}
+                          style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px', pointerEvents: 'none' }}
                           onMouseOver={e => e.target.play()}
                           onMouseOut={e => e.target.pause()}
                         />
@@ -172,19 +207,19 @@ export default function VideoEditing() {
             </button>
             <div className="modal-video-center">
               <div className="modal-video-aspect">
-                {isEmbeddable(selectedEdit.video_url) ? (
+                {isEmbeddable(selectedEdit.video_url) || selectedEdit.drive_file_id ? (
                   <iframe
-                    src={getEmbedUrl(selectedEdit.video_url)}
+                    src={getVideoEmbedUrl(selectedEdit)}
                     title={selectedEdit.title}
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
                   />
-                ) : selectedEdit.video_url ? (
+                ) : (selectedEdit.video_url || selectedEdit.drive_file_id) ? (
                   <video
                     controls
-                    src={getFullUrl(selectedEdit.video_url)}
+                    src={getFullVideoUrl(selectedEdit)}
                     style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
                   />
                 ) : (

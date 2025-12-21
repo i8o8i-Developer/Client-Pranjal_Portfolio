@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProfile, updateProfile, uploadImage, API_URL } from '../services/Api.js';
+import { getProfile, updateProfile, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Manager.css';
 
 // Helper To Get Full URL
@@ -7,6 +7,23 @@ const getFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return `${API_URL}${url}`;
+};
+
+// Helper To Get Profile Image URL With Google Drive Support
+const getProfileImageUrl = (profile) => {
+  // Check For Dedicated drive_file_id Field First
+  if (profile.profile_drive_id) {
+    return getGoogleDriveUrls.thumbnail(profile.profile_drive_id, 800);
+  }
+  // Try To Extract File ID From profile_image URL If It's A Google Drive URL
+  if (profile.profile_image) {
+    const extractedId = getGoogleDriveUrls.extractId(profile.profile_image);
+    if (extractedId) {
+      return getGoogleDriveUrls.thumbnail(extractedId, 800);
+    }
+    return getFullUrl(profile.profile_image);
+  }
+  return '';
 };
 
 export default function ProfileManager() {
@@ -72,19 +89,7 @@ export default function ProfileManager() {
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      const response = await uploadImage(file);
-      setProfile(prev => ({ ...prev, profile_image: response.data.url }));
-      showMessage('success', 'Image Uploaded Successfully');
-    } catch (error) {
-      console.error('Upload Error:', error);
-      showMessage('error', 'Failed To Upload Image');
-    }
-  };
+  // handleImageUpload removed - paste Google Drive URL directly in profile_image field
 
   const addSkill = () => {
     if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
@@ -175,37 +180,23 @@ export default function ProfileManager() {
         {/* Profile Image */}
         <div className="form-section">
           <h3>Profile Image</h3>
-          <div className="image-upload-container">
-            <div className="image-preview">
-              {profile.profile_image ? (
-                <img src={getFullUrl(profile.profile_image)} alt="Profile" />
-              ) : (
-                <div className="image-placeholder">
-                  <span>{profile.full_name?.[0] || 'P'}</span>
-                </div>
-              )}
-            </div>
-            <div className="image-upload-actions">
-              <label className="upload-btn">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  hidden
-                />
-                Upload New Image
-              </label>
-              {profile.profile_image && (
-                <button
-                  type="button"
-                  className="remove-btn"
-                  onClick={() => setProfile(prev => ({ ...prev, profile_image: '' }))}
-                >
-                  Remove Image
-                </button>
-              )}
-            </div>
+          <div className="form-group">
+            <label htmlFor="profile_image">Profile Image URL</label>
+            <input
+              type="url"
+              id="profile_image"
+              name="profile_image"
+              value={profile.profile_image}
+              onChange={handleChange}
+              placeholder="https://drive.google.com/file/d/..."
+            />
+            <small>Paste Google Drive URL For Profile Image</small>
           </div>
+          {(profile.profile_image || profile.profile_drive_id) && (
+            <div className="image-preview" style={{ marginTop: '1rem', maxWidth: '200px' }}>
+              <img src={getProfileImageUrl(profile)} alt="Profile" style={{ width: '100%', borderRadius: '8px' }} />
+            </div>
+          )}
         </div>
 
         {/* Basic Info */}
@@ -271,7 +262,7 @@ export default function ProfileManager() {
               value={newSkill}
               onChange={(e) => setNewSkill(e.target.value)}
               placeholder="Add A Skill..."
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+              onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill(); } }}
             />
             <button type="button" onClick={addSkill} className="add-tag-btn">Add</button>
           </div>
@@ -294,7 +285,7 @@ export default function ProfileManager() {
               value={newBrand}
               onChange={(e) => setNewBrand(e.target.value)}
               placeholder="Add A Brand..."
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addBrand())}
+              onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBrand(); } }}
             />
             <button type="button" onClick={addBrand} className="add-tag-btn">Add</button>
           </div>
@@ -317,7 +308,7 @@ export default function ProfileManager() {
               value={newSoftware}
               onChange={(e) => setNewSoftware(e.target.value)}
               placeholder="Add Software..."
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSoftware())}
+              onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSoftware(); } }}
             />
             <button type="button" onClick={addSoftware} className="add-tag-btn">Add</button>
           </div>

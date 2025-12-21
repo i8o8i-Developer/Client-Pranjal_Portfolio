@@ -1,21 +1,6 @@
-// Helper To Get Preview Thumbnail URL For Grid
-const getPreviewThumbnail = (video) => {
-  if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
-  if (video.video_type === 'youtube' && video.video_url) {
-    const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
-    const id = match ? match[1] : null;
-    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-  }
-  if (video.video_type === 'gdrive' && video.video_url) {
-    const match = video.video_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    const id = match ? match[1] : null;
-    if (id) return `https://drive.google.com/thumbnail?id=${id}`;
-  }
-  return null;
-};
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getVideos, API_URL } from '../services/Api.js';
+import { getVideos, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Photography.css';
 
 // Helper To Get Full URL For Images
@@ -23,6 +8,32 @@ const getFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return `${API_URL}${url}`;
+};
+
+// Helper To Get Preview Thumbnail URL For Grid
+const getPreviewThumbnail = (video) => {
+  // Priority 1: Use Google Drive file ID If Available
+  if (video.drive_file_id) {
+    return getGoogleDriveUrls.thumbnail(video.drive_file_id, 800);
+  }
+  
+  // Priority 2: Use Existing Thumbnail
+  if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
+  
+  // Priority 3: Generate From Video Type
+  if (video.video_type === 'youtube' && video.video_url) {
+    const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+    const id = match ? match[1] : null;
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  }
+  
+  // Priority 4: Try To Extract Google Drive ID From URL
+  if ((video.video_type === 'gdrive' || video.video_url?.includes('drive.google.com')) && video.video_url) {
+    const fileId = getGoogleDriveUrls.extractId(video.video_url);
+    if (fileId) return getGoogleDriveUrls.thumbnail(fileId, 800);
+  }
+  
+  return null;
 };
 
 export default function Videography() {
@@ -46,22 +57,25 @@ export default function Videography() {
   };
 
   const getEmbedUrl = (video) => {
-    const { video_type, video_url } = video;
+    const { video_type, video_url, drive_file_id } = video;
 
+    // Priority 1: Use Google Drive file ID If Available
+    if (drive_file_id) {
+      return getGoogleDriveUrls.embed(drive_file_id);
+    }
+
+    // Priority 2: Handle Based On Video Type
     if (video_type === 'youtube') {
       const videoId = video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
       return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : video_url;
-    } else if (video_type === 'gdrive') {
-      const fileId = video_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    } else if (video_type === 'gdrive' || video_url?.includes('drive.google.com')) {
+      const fileId = getGoogleDriveUrls.extractId(video_url);
       if (fileId) {
-        return `https://drive.google.com/file/d/${fileId[1]}/preview`;
-      }
-      const directId = video_url.match(/id=([a-zA-Z0-9_-]+)/);
-      if (directId) {
-        return `https://drive.google.com/file/d/${directId[1]}/preview`;
+        return getGoogleDriveUrls.embed(fileId);
       }
       return video_url;
     }
+    
     // For Direct/Upload Types, Return Full URL
     return getFullUrl(video_url);
   };

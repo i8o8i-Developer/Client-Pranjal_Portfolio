@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
+import os
 
 
 class Settings(BaseSettings):
@@ -26,10 +27,13 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     admin_url: str = "http://localhost:3001"
     backend_url: str = "http://localhost:8000"
+    vite_api_url: str | None = None
     
-    # File Upload
-    max_file_size: int = 104857600  # 100MB
-    upload_directory: str = "./Uploads"
+    # Google Drive Configuration (PRIMARY MEDIA STORAGE)
+    google_drive_enabled: bool = True
+    google_drive_folder_id: str = ""  # Set Your Google Drive folder ID
+    google_service_account_file: str = "./service-account.json"  # Path To Service Account JSON
+    google_service_account_json: str = ""  # Or Set As Environment Variable For Railway
     
     # CORS - Allow All Localhost Ports For Development
     cors_origins: str = "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173"
@@ -37,11 +41,21 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"
     
+    # Railway.app PORT support
+    port: int = 8000
+    
     class Config:
+        # Look For .env In The Project Root (One Level Up From Backend)
         env_file = "../.env"
+        env_file_encoding = 'utf-8'
         
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",")]
+
+# Check If Running On Railway.app And Adjust Settings
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    # On Railway, Environment Variables Are Already Loaded
+    pass
 
 settings = Settings()

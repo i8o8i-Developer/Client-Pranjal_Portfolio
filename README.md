@@ -98,6 +98,7 @@ graph TD
     A[FastAPI] --> B[Uvicorn]
     A --> C[Motor]
     A --> D[Pydantic]
+    A --> E[Google Drive API]
     B --> E[ASGI Server]
     C --> F[MongoDB Driver]
     D --> G[Data Validation]
@@ -109,10 +110,12 @@ graph TD
 - **📋 Pydantic** - Data Validation And Settings
 - **🔐 Python-Jose** - JSON Web Token Implementation
 - **🔒 Passlib** - Secure Password Hashing
+- **☁️ Google Drive API** - Cloud Media Storage & Serving
 
 ### 🗄️ Database & Infrastructure
 - **🍃 MongoDB** - NoSQL Document Database
 - **🌐 Nginx** - High-Performance Web Server
+- **☁️ Google Drive** - Free Cloud Storage For Media Files
 
 ## 🏗️ Architecture
 
@@ -152,13 +155,20 @@ Before You Begin, Ensure You Have These Installed:
    cd pranjal-portfolio
    ```
 
-2. **Environment Setup**
+2. **Setup Google Drive Integration** (Recommended for Free Hosting)
    ```bash
+   # Follow the detailed guide:
+   See GOOGLE_DRIVE_SETUP.md
+   ```
+
+3. **Environment Setup**
+   ```bash
+   cd Backend
    cp .env.example .env
    # Edit .env With Your Configuration
    ```
 
-3. **Launch Services**
+4. **Launch Services**
    ```bash
    # Terminal 1: Start MongoDB
    mongod
@@ -168,15 +178,15 @@ Before You Begin, Ensure You Have These Installed:
    uvicorn App.Main:app --reload
 
    # Terminal 3: Start Frontend
-   cd Frontend && npm install && npm start
+   cd Frontend && npm install && npm run dev
 
    # Terminal 4: Start Admin
-   cd Admin && npm install && npm start
+   cd Admin && npm install && npm run dev
    ```
 
-4. **Access Applications**
-   - 🌐 **Portfolio**: http://localhost:3000
-   - 🔧 **Admin Panel**: http://localhost:3001
+5. **Access Applications**
+   - 🌐 **Portfolio**: http://localhost:5173
+   - 🔧 **Admin Panel**: http://localhost:5174
    - 📚 **API Docs**: http://localhost:8000/docs
 
 ## ⚙️ Configuration
@@ -194,6 +204,13 @@ DATABASE_NAME=pranjal_portfolio
 JWT_SECRET=Your-Super-Secret-JWT-Key
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
+# Google Drive Configuration (NEW!)
+GOOGLE_DRIVE_ENABLED=true
+GOOGLE_DRIVE_FOLDER_ID=your-folder-id-here
+GOOGLE_SERVICE_ACCOUNT_FILE=./service-account.json
+# For Netlify/Production:
+# GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 
 # Admin Credentials
 ADMIN_EMAIL=admin@pranjal.com
@@ -234,6 +251,18 @@ The Backend Provides Interactive API Documentation:
 |--------|----------|-------------|
 | `POST` | `/auth/login` | 🔐 Admin Authentication |
 | `GET` | `/profile` | 👤 Get Profile Information |
+| `GET` | `/photos` | 📸 Get Photo Projects |
+| `GET` | `/videos` | 🎬 Get Video Projects |
+| `GET` | `/edits` | ✂️ Get Edit Projects |
+| `POST` | `/contact` | 📧 Submit Contact Form |
+| `GET` | `/media/drive/{file_id}` | ☁️ Get Google Drive File URLs |
+| `GET` | `/media/drive/{file_id}/thumbnail` | 🖼️ Get Thumbnail URL |
+
+## 📚 Documentation
+
+- **[Google Drive Setup Guide](./GOOGLE_DRIVE_SETUP.md)** - Complete setup for free cloud storage
+- **[Migration Guide](./MIGRATION_GUIDE.md)** - Migrate from old URL system to Google Drive
+- **[API Documentation](http://localhost:8000/docs)** - Interactive API reference
 | `POST` | `/photos/upload` | 📸 Upload Photography |
 | `POST` | `/videos/upload` | 🎬 Upload Videography |
 | `POST` | `/edits/upload` | ✂️ Upload Video Edits |

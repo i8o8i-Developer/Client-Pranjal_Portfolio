@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from App.Core.Config import settings
 from App.Core.Database import connect_to_mongo, close_mongo_connection
-from App.Api import Auth as auth, Profile as profile, Photos as photos, Videos as videos, Edits as edits, Contact as contact, Upload as upload, Analytics as analytics
-import os
+from App.Api import Auth as auth, Profile as profile, Photos as photos, Videos as videos, Edits as edits, Contact as contact, Analytics as analytics, Media as media
 import logging
 
 # Configure logging
@@ -50,19 +48,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create Uploads Directory
-try:
-    os.makedirs(settings.upload_directory, exist_ok=True)
-    logger.info(f"Upload Directory Ready: {settings.upload_directory}")
-except Exception as e:
-    logger.error(f"Failed To Create Upload Directory: {e}")
-
-# Mount Static Files
-try:
-    app.mount("/Uploads", StaticFiles(directory=settings.upload_directory), name="Uploads")
-except Exception as e:
-    logger.error(f"Failed To Mount Static Files: {e}")
-
 # Health Check
 @app.get("/")
 async def root():
@@ -85,5 +70,6 @@ app.include_router(photos.router, prefix="/api/photos", tags=["Photography"])
 app.include_router(videos.router, prefix="/api/videos", tags=["Videography"])
 app.include_router(edits.router, prefix="/api/edits", tags=["Video Editing"])
 app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
-app.include_router(upload.router, prefix="/api/upload", tags=["Upload"])
+# Upload Router Removed - All Media Now Handled Via Google Drive
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
+app.include_router(media.router, prefix="/api/media", tags=["Media - Google Drive"])

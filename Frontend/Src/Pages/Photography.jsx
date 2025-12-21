@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getPhotos, getPhotoCategories, API_URL } from '../services/Api.js';
+import { getPhotos, getPhotoCategories, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Photography.css';
 
-// Helper to get full URL for images
-const getFullImageUrl = (url) => {
+// Helper To Get Full URL For Images (Supports Google Drive)
+const getFullImageUrl = (photo) => {
+  if (!photo) return '';
+  
+  // If Has Google Drive File ID, Use It
+  if (photo.drive_file_id) {
+    return getGoogleDriveUrls.direct(photo.drive_file_id);
+  }
+  
+  // Otherwise Use Regular URL
+  const url = photo.image_url || photo;
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return `${API_URL}${url}`;
+};
+
+// Helper To Get Thumbnail URL
+const getThumbnailUrl = (photo, size = 800) => {
+  if (!photo) return '';
+  
+  // If Has Google Drive File ID, Generate Thumbnail
+  if (photo.drive_file_id) {
+    return getGoogleDriveUrls.thumbnail(photo.drive_file_id, size);
+  }
+  
+  // Use Existing Thumbnail Or Fallback To Image URL
+  if (photo.thumbnail_url) return getFullImageUrl({ image_url: photo.thumbnail_url });
+  return getFullImageUrl(photo);
 };
 
 export default function Photography() {
@@ -109,7 +132,7 @@ export default function Photography() {
                   onClick={() => setSelectedPhoto(photo)}
                 >
                   <img
-                    src={getFullImageUrl(photo.thumbnail_url || photo.image_url)}
+                    src={getThumbnailUrl(photo)}
                     alt={photo.title}
                     loading="lazy"
                   />
@@ -130,7 +153,7 @@ export default function Photography() {
             <button className="modal-close" onClick={() => setSelectedPhoto(null)}>
               ×
             </button>
-            <img src={getFullImageUrl(selectedPhoto.image_url)} alt={selectedPhoto.title} />
+            <img src={getFullImageUrl(selectedPhoto)} alt={selectedPhoto.title} />
             <div className="modal-info">
               <h2>{selectedPhoto.title}</h2>
               <p>{selectedPhoto.description}</p>

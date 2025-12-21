@@ -1,20 +1,5 @@
-  // Helper To Get Preview Thumbnail URL For Grid
-  const getPreviewThumbnail = (video) => {
-    if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
-    if (video.video_type === 'youtube' && video.video_url) {
-      const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
-      const id = match ? match[1] : null;
-      if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-    }
-    if (video.video_type === 'gdrive' && video.video_url) {
-      const match = video.video_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      const id = match ? match[1] : null;
-      if (id) return `https://drive.google.com/thumbnail?id=${id}`;
-    }
-    return null;
-  };
 import React, { useState, useEffect } from 'react';
-import { getVideos, createVideo, updateVideo, deleteVideo, uploadImage, uploadVideo, API_URL } from '../services/Api.js';
+import { getVideos, createVideo, updateVideo, deleteVideo, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Manager.css';
 import CustomSelect from './CustomSelect.jsx';
 
@@ -25,11 +10,37 @@ const getFullUrl = (url) => {
   return `${API_URL}${url}`;
 };
 
+// Helper To Get Preview Thumbnail URL For Grid
+const getPreviewThumbnail = (video) => {
+  // Priority 1: Use Google Drive file ID If Available
+  if (video.drive_file_id) {
+    return getGoogleDriveUrls.thumbnail(video.drive_file_id, 800);
+  }
+  
+  // Priority 2: Use Existing Thumbnail
+  if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
+  
+  // Priority 3: Generate From Video Type
+  if (video.video_type === 'youtube' && video.video_url) {
+    const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+    const id = match ? match[1] : null;
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  }
+  
+  // Priority 4: Try To Extract Google Drive ID From URL
+  if ((video.video_type === 'gdrive' || video.video_url?.includes('drive.google.com')) && video.video_url) {
+    const fileId = getGoogleDriveUrls.extractId(video.video_url);
+    if (fileId) return getGoogleDriveUrls.thumbnail(fileId, 800);
+  }
+  
+  return null;
+};
+
 export default function VideosManager() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
@@ -113,19 +124,6 @@ export default function VideosManager() {
     }));
   };
 
-  const handleThumbnailUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      const response = await uploadImage(file);
-      setFormData(prev => ({ ...prev, thumbnail_url: response.data.url }));
-      showMessage('success', 'Thumbnail Uploaded Successfully');
-    } catch (error) {
-      console.error('Upload Error:', error);
-      showMessage('error', 'Failed To Upload Thumbnail');
-    }
-  };
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
@@ -162,23 +160,7 @@ export default function VideosManager() {
     return url;
   };
 
-  // Handle Video File Upload For Direct Storage
-  const handleVideoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    setUploading(true);
-    try {
-      const response = await uploadVideo(file);
-      setFormData(prev => ({ ...prev, video_url: response.data.url }));
-      showMessage('success', 'Video Uploaded Successfully');
-    } catch (error) {
-      console.error('Upload Error:', error);
-      showMessage('error', 'Failed To Upload Video. Max Size: 100MB');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -354,42 +336,25 @@ export default function VideosManager() {
                 </div>
 
                 <div className="form-group flex-2">
-                  {formData.video_type === 'upload' ? (
-                    <>
-                      <label>Upload Video File</label>
-                      <div className="upload-area">
-                        {formData.video_url ? (
-                          <div className="uploaded-video-info">
-                            <span>✓ Video Uploaded</span>
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, video_url: '' }))}>
-                              Remove
-                            </button>
-                          </div>
-                        ) : (
-                          <label className={`upload-btn ${uploading ? 'uploading' : ''}`}>
-                            <input type="file" accept="video/mp4,video/webm,video/mov" onChange={handleVideoUpload} hidden disabled={uploading} />
-                            {uploading ? 'Uploading...' : 'Choose Video File (Max 100MB)'}
-                          </label>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <label>Video URL</label>
+                  <label>Video URL</label>
+                  <small style={{color: '#888', display: 'block', marginBottom: '8px'}}>
+                    {formData.video_type === 'youtube' && 'YouTube URL or video ID'}
+                    {formData.video_type === 'gdrive' && 'Google Drive link (Any Format) Or File ID'}
+                    {formData.video_type === 'direct' && 'Direct Video File URL'}
+                    {formData.video_type === 'upload' && 'Use Google Drive Instead - Paste Drive URL Here'}
+                      </small>
                       <input
-                        type="url"
+                        type="text"
                         name="video_url"
                         value={formData.video_url}
                         onChange={handleChange}
                         placeholder={
-                          formData.video_type === 'youtube' ? 'https://youtube.com/watch?v=...' :
-                          formData.video_type === 'gdrive' ? 'https://drive.google.com/file/d/.../view' :
+                          formData.video_type === 'youtube' ? 'https://youtube.com/watch?v=... Or Video ID' :
+                          formData.video_type === 'gdrive' ? 'https://drive.google.com/file/d/.../view Or File ID' :
                           'https://example.com/video.mp4'
                         }
                         required
                       />
-                    </>
-                  )}
                 </div>
               </div>
 
@@ -406,7 +371,7 @@ export default function VideosManager() {
                     ></iframe>
                   ) : (
                     <video controls src={formData.video_url} style={{ width: '100%', maxHeight: '300px' }}>
-                      Your browser does not support the video tag.
+                      Your Browser Does Not Support The Video Tag.
                     </video>
                   )}
                 </div>
@@ -423,22 +388,15 @@ export default function VideosManager() {
               </div>
 
               <div className="form-group">
-                <label>Thumbnail (Optional)</label>
-                <div className="upload-area">
-                  {formData.thumbnail_url ? (
-                    <div className="uploaded-image">
-                      <img src={getFullUrl(formData.thumbnail_url)} alt="Thumbnail" />
-                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}>
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="upload-btn">
-                      <input type="file" accept="image/*" onChange={handleThumbnailUpload} hidden />
-                      Upload Thumbnail
-                    </label>
-                  )}
-                </div>
+                <label>Thumbnail URL (Optional - Auto-Generated From Google Drive)</label>
+                <input
+                  type="url"
+                  name="thumbnail_url"
+                  value={formData.thumbnail_url}
+                  onChange={handleChange}
+                  placeholder="https://drive.google.com/file/d/... Or Leave Empty"
+                />
+                <small>Paste Google Drive URL or Leave Empty - Auto-Generated From Video File ID</small>
               </div>
 
               <div className="form-group">
@@ -449,7 +407,7 @@ export default function VideosManager() {
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     placeholder="Add A Tag..."
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                    onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
                   />
                   <button type="button" onClick={addTag} className="add-tag-btn">Add</button>
                 </div>

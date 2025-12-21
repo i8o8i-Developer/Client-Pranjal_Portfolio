@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { getPhotos, createPhoto, updatePhoto, deletePhoto, uploadImage, API_URL } from '../services/Api.js';
+import { getPhotos, createPhoto, updatePhoto, deletePhoto, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import CustomSelect from './CustomSelect.jsx';
 import './Manager.css';
 
-// Helper To Get Full Image URL
-const getFullImageUrl = (url) => {
+// Helper To Get Full Image URL (Supports Both Regular URLs And Google Drive)
+const getFullImageUrl = (photo) => {
+  if (!photo) return '';
+  
+  // If Has Google Drive file ID, Use It
+  if (photo.drive_file_id) {
+    return getGoogleDriveUrls.direct(photo.drive_file_id);
+  }
+  
+  // Otherwise Use Regular URL
+  const url = photo.image_url || photo;
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return `${API_URL}${url}`;
+};
+
+// Helper To Get Thumbnail URL
+const getThumbnailUrl = (photo, size = 400) => {
+  if (!photo) return '';
+  
+  // If Has Google Drive file ID, Generate Thumbnail
+  if (photo.drive_file_id) {
+    return getGoogleDriveUrls.thumbnail(photo.drive_file_id, size);
+  }
+  
+  // Use Existing Thumbnail Or Fallback To Image URL
+  if (photo.thumbnail_url) return getFullImageUrl({ image_url: photo.thumbnail_url });
+  return getFullImageUrl(photo);
 };
 
 export default function PhotosManager() {
@@ -98,19 +121,6 @@ export default function PhotosManager() {
     }));
   };
 
-  const handleImageUpload = async (e, field) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      const response = await uploadImage(file);
-      setFormData(prev => ({ ...prev, [field]: response.data.url }));
-      showMessage('success', 'Image Uploaded Successfully');
-    } catch (error) {
-      console.error('Upload Error:', error);
-      showMessage('error', 'Failed To Upload Image');
-    }
-  };
 
   const addTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
@@ -211,8 +221,8 @@ export default function PhotosManager() {
           {photos.map((photo) => (
             <div key={photo._id} className={`item-card ${!photo.published ? 'unpublished' : ''}`}>
               <div className="item-image">
-                {photo.image_url ? (
-                  <img src={getFullImageUrl(photo.image_url)} alt={photo.title} />
+                {(photo.image_url || photo.drive_file_id) ? (
+                  <img src={getThumbnailUrl(photo, 400)} alt={photo.title} />
                 ) : (
                   <div className="no-image">No Image</div>
                 )}
@@ -284,22 +294,38 @@ export default function PhotosManager() {
               </div>
 
               <div className="form-group">
-                <label>Main Image</label>
-                <div className="upload-area">
+                <label>Main Image URL</label>
+                <small style={{color: '#888', display: 'block', marginBottom: '8px'}}>
+                  Paste Google Drive link or upload image
+                </small>
+                <input
+                  type="text"
+                  name="image_url"
+                  value={formData.image_url}
+                  onChange={handleChange}
+                  placeholder="https://drive.google.com/file/d/... Or Upload Below"
+                />
+                <div className="upload-area" style={{marginTop: '10px'}}>
                   {formData.image_url ? (
                     <div className="uploaded-image">
-                      <img src={getFullImageUrl(formData.image_url)} alt="Preview" />
-                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}>
-                        Remove
-                      </button>
+                      <img 
+                        src={getGoogleDriveUrls.isDriveUrl(formData.image_url) 
+                          ? getGoogleDriveUrls.thumbnail(getGoogleDriveUrls.extractId(formData.image_url), 400)
+                          : getFullImageUrl({ image_url: formData.image_url })
+                        } 
+                        alt="Preview" 
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'block';
+                        }}
+                      />
+                      <div style={{display: 'none', padding: '20px', background: '#f5f5f5', textAlign: 'center'}}>
+                        Preview not available
+                      </div>
                     </div>
-                  ) : (
-                    <label className="upload-btn">
-                      <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'image_url')} hidden />
-                      Upload Image
-                    </label>
-                  )}
+                  ) : null}
                 </div>
+                <small>Paste Google Drive URL - file ID Will Be Automatically Extracted</small>
               </div>
 
               <div className="form-group">
@@ -310,7 +336,7 @@ export default function PhotosManager() {
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     placeholder="Add A Tag..."
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                    onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
                   />
                   <button type="button" onClick={addTag} className="add-tag-btn">Add</button>
                 </div>

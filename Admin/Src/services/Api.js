@@ -83,36 +83,62 @@ export const getMessages = (params) => api.get('/api/contact', { params });
 export const markMessageRead = (id) => api.put(`/api/contact/${id}/read`);
 export const deleteMessage = (id) => api.delete(`/api/contact/${id}`);
 
-// Upload
-export const uploadImage = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await api.post('/api/upload/image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  // Return Full URL For The Uploaded Image
-  if (response.data && response.data.url) {
-    response.data.url = `${API_URL}${response.data.url}`;
-  }
-  return response;
-};
-
-export const uploadVideo = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const response = await api.post('/api/upload/video', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  // Return Full URL For The Uploaded Video
-  if (response.data && response.data.url) {
-    response.data.url = `${API_URL}${response.data.url}`;
-  }
-  return response;
-};
 
 // Analytics
 export const getAnalyticsStats = (hours = 24) => api.get('/api/analytics/stats', { params: { hours } });
 export const getRealtimeVisitors = () => api.get('/api/analytics/realtime');
+
+// Google Drive Media URLs
+export const getDriveFileUrls = (fileId) => api.get(`/api/media/drive/${fileId}`);
+export const getDriveThumbnail = (fileId, size = 800) => api.get(`/api/media/drive/${fileId}/thumbnail`, { params: { size } });
+export const getDriveDirectUrl = (fileId) => api.get(`/api/media/drive/${fileId}/direct`);
+export const getDriveEmbedUrl = (fileId) => api.get(`/api/media/drive/${fileId}/embed`);
+export const extractDriveFileId = (url) => api.post('/api/media/drive/extract-id', { url });
+export const listDriveFolderFiles = (folderId, pageSize = 100) => api.get(`/api/media/drive/folder/${folderId}/files`, { params: { page_size: pageSize } });
+
+// Helper Functions For Google Drive
+export const getGoogleDriveUrls = {
+  /**
+   * Get Direct download/view URL For Google Drive File
+   */
+  direct: (fileId) => `https://drive.google.com/uc?export=view&id=${fileId}`,
+  
+  /**
+   * Get Thumbnail URL For Google Drive File
+   */
+  thumbnail: (fileId, size = 800) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`,
+  
+  /**
+   * Get Embed URL For Google Drive Video
+   */
+  embed: (fileId) => `https://drive.google.com/file/d/${fileId}/preview`,
+  
+  /**
+   * Extract File ID From Google Drive URL
+   */
+  extractId: (url) => {
+    if (!url) return null;
+    // Pattern For /d/{file_id}
+    let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Pattern For id={file_id}
+    match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // If It's Already Just An ID
+    if (/^[a-zA-Z0-9_-]+$/.test(url)) return url;
+    
+    return null;
+  },
+  
+  /**
+   * Check If URL Is A Google Drive URL
+   */
+  isDriveUrl: (url) => {
+    return url && url.includes('drive.google.com');
+  }
+};
 
 // Export API_URL For Use In Components
 export { API_URL };
