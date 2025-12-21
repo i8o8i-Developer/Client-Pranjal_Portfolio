@@ -132,9 +132,15 @@ export default function VideoEditing() {
                   {edit.thumbnail_url ? (
                     <img src={getFullUrl(edit.thumbnail_url)} alt={edit.title} loading="lazy" />
                   ) : (
-                    <div className="video-placeholder">
-                      <span>▶</span>
-                    </div>
+                    <video
+                      className="video-preview"
+                      src={getFullUrl(edit.video_url)}
+                      controls={false}
+                      preload="metadata"
+                      style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px' }}
+                      onMouseOver={e => e.target.play()}
+                      onMouseOut={e => e.target.pause()}
+                    />
                   )}
                   <div className="photo-overlay">
                     <h3>{edit.title}</h3>
@@ -152,7 +158,7 @@ export default function VideoEditing() {
             <button className="modal-close" onClick={() => setSelectedEdit(null)}>
               ×
             </button>
-            <div className="video-wrapper">
+            <div className="video-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
               {isEmbeddable(selectedEdit.video_url) ? (
                 <iframe
                   src={getEmbedUrl(selectedEdit.video_url)}
@@ -160,14 +166,19 @@ export default function VideoEditing() {
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                  style={{ width: '700px', height: '400px', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
                 />
               ) : (
-                <video controls src={getFullUrl(selectedEdit.video_url)} />
+                <video
+                  controls
+                  src={getFullUrl(selectedEdit.video_url)}
+                  style={{ width: '700px', height: '400px', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
+                />
               )}
             </div>
             <div className="modal-info">
-              <h2>{selectedEdit.title}</h2>
-              <p>{selectedEdit.description}</p>
+              <h2 style={{ fontSize: '2.2rem', marginBottom: '1rem' }}>{selectedEdit.title}</h2>
+              <p style={{ fontSize: '1.15rem', color: '#ccc', marginBottom: '1rem' }}>{selectedEdit.description}</p>
               {selectedEdit.tags && selectedEdit.tags.length > 0 && (
                 <div className="tags">
                   {selectedEdit.tags.map((tag, index) => (

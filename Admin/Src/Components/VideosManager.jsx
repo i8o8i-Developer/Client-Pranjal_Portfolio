@@ -1,3 +1,18 @@
+  // Helper To Get Preview Thumbnail URL For Grid
+  const getPreviewThumbnail = (video) => {
+    if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
+    if (video.video_type === 'youtube' && video.video_url) {
+      const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+      const id = match ? match[1] : null;
+      if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    }
+    if (video.video_type === 'gdrive' && video.video_url) {
+      const match = video.video_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      const id = match ? match[1] : null;
+      if (id) return `https://drive.google.com/thumbnail?id=${id}`;
+    }
+    return null;
+  };
 import React, { useState, useEffect } from 'react';
 import { getVideos, createVideo, updateVideo, deleteVideo, uploadImage, uploadVideo, API_URL } from '../services/Api.js';
 import './Manager.css';
@@ -250,13 +265,32 @@ export default function VideosManager() {
           {videos.map((video) => (
             <div key={video._id} className={`item-card ${!video.published ? 'unpublished' : ''}`}>
               <div className="item-image video-thumbnail">
-                {video.thumbnail_url ? (
-                  <img src={getFullUrl(video.thumbnail_url)} alt={video.title} />
-                ) : (
-                  <div className="no-image">
-                    <span className="video-icon">▶</span>
-                  </div>
-                )}
+                {(() => {
+                  const thumb = getPreviewThumbnail(video);
+                  if (thumb) {
+                    return <img src={thumb} alt={video.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />;
+                  } else if (video.video_url) {
+                    return (
+                      <div style={{ width: '100%', aspectRatio: '16/9', background: '#181818', borderRadius: '10px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <video
+                          className="video-preview"
+                          src={getFullUrl(video.video_url)}
+                          controls={false}
+                          preload="metadata"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#222' }}
+                          onMouseOver={e => e.target.play()}
+                          onMouseOut={e => e.target.pause()}
+                        />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div style={{ width: '100%', aspectRatio: '16/9', background: '#222', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d4af37', fontSize: '2.5rem' }}>
+                        <span className="video-icon">▶</span>
+                      </div>
+                    );
+                  }
+                })()}
                 <span className="video-type-badge">{video.video_type}</span>
                 <div className="item-overlay">
                   <button className="edit-btn" onClick={() => openModal(video)}>Edit</button>

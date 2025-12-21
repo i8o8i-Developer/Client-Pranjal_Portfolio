@@ -1,3 +1,18 @@
+// Helper To Get Preview Thumbnail URL For Grid
+const getPreviewThumbnail = (video) => {
+  if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
+  if (video.video_type === 'youtube' && video.video_url) {
+    const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+    const id = match ? match[1] : null;
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  }
+  if (video.video_type === 'gdrive' && video.video_url) {
+    const match = video.video_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const id = match ? match[1] : null;
+    if (id) return `https://drive.google.com/thumbnail?id=${id}`;
+  }
+  return null;
+};
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getVideos, API_URL } from '../services/Api.js';
@@ -95,13 +110,31 @@ export default function Videography() {
                   whileHover={{ y: -5 }}
                   onClick={() => setSelectedVideo(video)}
                 >
-                  {video.thumbnail_url ? (
-                    <img src={getFullUrl(video.thumbnail_url)} alt={video.title} loading="lazy" />
-                  ) : (
-                    <div className="video-placeholder">
-                      <span>▶</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const thumb = getPreviewThumbnail(video);
+                    if (thumb) {
+                      return <img src={thumb} alt={video.title} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />;
+                    } else if (video.video_url) {
+                      return (
+                        <div className="video-preview-outer">
+                          <video
+                            className="video-preview"
+                            src={getFullUrl(video.video_url)}
+                            controls={false}
+                            preload="metadata"
+                            onMouseOver={e => e.target.play()}
+                            onMouseOut={e => e.target.pause()}
+                          />
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="video-placeholder">
+                          <span>▶</span>
+                        </div>
+                      );
+                    }
+                  })()}
                   <div className="photo-overlay">
                     <h3>{video.title}</h3>
                     <p>{video.video_type}</p>
@@ -119,22 +152,33 @@ export default function Videography() {
             <button className="modal-close" onClick={() => setSelectedVideo(null)}>
               ×
             </button>
-            <div className="video-wrapper">
-              {isEmbeddable(selectedVideo.video_type) ? (
-                <iframe
-                  src={getEmbedUrl(selectedVideo)}
-                  title={selectedVideo.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <video controls src={getFullUrl(selectedVideo.video_url)} />
-              )}
+            <div className="modal-video-center">
+              <div className="modal-video-aspect">
+                {isEmbeddable(selectedVideo.video_type) ? (
+                  <iframe
+                    src={getEmbedUrl(selectedVideo)}
+                    title={selectedVideo.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
+                  />
+                ) : selectedVideo.video_url ? (
+                  <video
+                    controls
+                    src={getFullUrl(selectedVideo.video_url)}
+                    style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
+                  />
+                ) : (
+                  <div className="video-placeholder-large">
+                    <span>▶</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="modal-info">
-              <h2>{selectedVideo.title}</h2>
-              <p>{selectedVideo.description}</p>
+              <h2 style={{ fontSize: '2.2rem', marginBottom: '1rem' }}>{selectedVideo.title}</h2>
+              <p style={{ fontSize: '1.15rem', color: '#ccc', marginBottom: '1rem' }}>{selectedVideo.description}</p>
               {selectedVideo.tags && selectedVideo.tags.length > 0 && (
                 <div className="tags">
                   {selectedVideo.tags.map((tag, index) => (
