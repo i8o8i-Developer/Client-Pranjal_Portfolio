@@ -246,6 +246,21 @@ export default function EditsManager() {
               <div className="item-image video-thumbnail">
                 {edit.thumbnail_url ? (
                   <img src={getFullUrl(edit.thumbnail_url)} alt={edit.title} />
+                ) : edit.video_url ? (
+                  isEmbeddable(edit.video_url) ? (
+                    <iframe
+                      src={getEmbedUrl(edit.video_url)}
+                      title="Video Preview"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      style={{ width: '100%', height: '180px' }}
+                    ></iframe>
+                  ) : (
+                    <video controls src={getFullUrl(edit.video_url)} style={{ width: '100%', maxHeight: '180px' }}>
+                      Your Browser Does Not Support the Video Tag.
+                    </video>
+                  )
                 ) : (
                   <div className="no-image">
                     <span className="video-icon">✂</span>

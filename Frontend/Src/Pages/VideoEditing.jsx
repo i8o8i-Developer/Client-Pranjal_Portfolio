@@ -131,22 +131,32 @@ export default function VideoEditing() {
                 >
                   {edit.thumbnail_url ? (
                     <img src={getFullUrl(edit.thumbnail_url)} alt={edit.title} loading="lazy" />
-                  ) : (
-                    <video
-                      className="video-preview"
-                      src={getFullUrl(edit.video_url)}
-                      controls={false}
-                      preload="metadata"
-                      style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px' }}
-                      onMouseOver={e => e.target.play()}
-                      onMouseOut={e => e.target.pause()}
-                    />
-                  )}
+                  ) : edit.video_url ? (
+                    isEmbeddable(edit.video_url) ? (
+                      <iframe
+                        src={getEmbedUrl(edit.video_url)}
+                        title={edit.title}
+                        style={{ width: '100%', height: '180px', borderRadius: '10px', background: '#222', border: 'none' }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        className="video-preview"
+                        src={getFullUrl(edit.video_url)}
+                        controls={false}
+                        preload="metadata"
+                        style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px' }}
+                        onMouseOver={e => e.target.play()}
+                        onMouseOut={e => e.target.pause()}
+                      />
+                    )
+                  ) : null}
                   <div className="photo-overlay">
                     <h3>{edit.title}</h3>
                   </div>
                 </motion.div>
-              ))}
+  
             </div>
           )}
         </div>

@@ -315,7 +315,6 @@
 
 .item-image {
   position: relative;
-  aspect-ratio: 16/10;
   overflow: hidden;
   background: var(--admin-bg-secondary);
 }
@@ -325,6 +324,16 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+}
+
+.item-image iframe,
+.item-image video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: none;
+  background: #000;
 }
 
 .item-card:hover .item-image img {
@@ -409,6 +418,7 @@
 
 .item-content {
   padding: 1rem 1.25rem;
+  padding-top: 0.75rem;
 }
 
 .item-content h3 {
