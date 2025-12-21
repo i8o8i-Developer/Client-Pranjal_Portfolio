@@ -118,45 +118,47 @@ export default function VideoEditing() {
             </div>
           ) : (
             <div className="photo-grid">
-              {edits.filter(edit => !edit.is_featured).map((edit, index) => (
-                <motion.div
-                  key={edit._id}
-                  className="photo-item"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -5 }}
-                  onClick={() => setSelectedEdit(edit)}
-                >
-                  {edit.thumbnail_url ? (
-                    <img src={getFullUrl(edit.thumbnail_url)} alt={edit.title} loading="lazy" />
-                  ) : edit.video_url ? (
-                    isEmbeddable(edit.video_url) ? (
-                      <iframe
-                        src={getEmbedUrl(edit.video_url)}
-                        title={edit.title}
-                        style={{ width: '100%', height: '180px', borderRadius: '10px', background: '#222', border: 'none' }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <video
-                        className="video-preview"
-                        src={getFullUrl(edit.video_url)}
-                        controls={false}
-                        preload="metadata"
-                        style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px' }}
-                        onMouseOver={e => e.target.play()}
-                        onMouseOut={e => e.target.pause()}
-                      />
-                    )
-                  ) : null}
-                  <div className="photo-overlay">
-                    <h3>{edit.title}</h3>
-                  </div>
-                </motion.div>
-  
+              <>
+                {edits.filter(edit => !edit.is_featured).map((edit, index) => (
+                  <motion.div
+                    key={edit._id}
+                    className="photo-item"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                    viewport={{ once: true }}
+                    whileHover={{ y: -5 }}
+                    onClick={() => setSelectedEdit(edit)}
+                  >
+                    {edit.thumbnail_url ? (
+                      <img src={getFullUrl(edit.thumbnail_url)} alt={edit.title} loading="lazy" />
+                    ) : edit.video_url ? (
+                      isEmbeddable(edit.video_url) ? (
+                        <iframe
+                          src={getEmbedUrl(edit.video_url)}
+                          title={edit.title}
+                          style={{ width: '100%', height: '180px', borderRadius: '10px', background: '#222', border: 'none' }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video
+                          className="video-preview"
+                          src={getFullUrl(edit.video_url)}
+                          controls={false}
+                          preload="metadata"
+                          style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px' }}
+                          onMouseOver={e => e.target.play()}
+                          onMouseOut={e => e.target.pause()}
+                        />
+                      )
+                    ) : null}
+                    <div className="photo-overlay">
+                      <h3>{edit.title}</h3>
+                    </div>
+                  </motion.div>
+                ))}
+              </>
             </div>
           )}
         </div>
