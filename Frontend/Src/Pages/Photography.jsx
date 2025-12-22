@@ -149,14 +149,28 @@ export default function Photography() {
 
       {selectedPhoto && (
         <div className="modal" onClick={() => setSelectedPhoto(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content photo-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelectedPhoto(null)}>
               ×
             </button>
-            <img src={getFullImageUrl(selectedPhoto)} alt={selectedPhoto.title} />
+            <div className="modal-image-center">
+              <div className="modal-image-wrapper">
+                <img 
+                  src={getFullImageUrl(selectedPhoto)} 
+                  alt={selectedPhoto.title}
+                  onError={(e) => {
+                    console.error('Image failed to load:', getFullImageUrl(selectedPhoto));
+                    e.target.style.border = '2px solid red';
+                  }}
+                  onLoad={(e) => {
+                    console.log('Image loaded successfully:', getFullImageUrl(selectedPhoto));
+                  }}
+                />
+              </div>
+            </div>
             <div className="modal-info">
-              <h2>{selectedPhoto.title}</h2>
-              <p>{selectedPhoto.description}</p>
+              <h2 style={{ fontSize: '2.2rem', marginBottom: '1rem' }}>{selectedPhoto.title}</h2>
+              <p style={{ fontSize: '1.15rem', color: '#ccc', marginBottom: '1rem' }}>{selectedPhoto.description}</p>
               {selectedPhoto.tags && selectedPhoto.tags.length > 0 && (
                 <div className="tags">
                   {selectedPhoto.tags.map((tag, index) => (

@@ -62,8 +62,9 @@ export const extractDriveFileId = (url) => api.post('/api/media/drive/extract-id
 export const getGoogleDriveUrls = {
   /**
    * Get Direct download/view URL For Google Drive File
+   * Using lh3.googleusercontent.com for better image loading
    */
-  direct: (fileId) => `https://drive.google.com/uc?export=view&id=${fileId}`,
+  direct: (fileId) => `https://lh3.googleusercontent.com/d/${fileId}`,
   
   /**
    * Get Thumbnail URL For Google Drive File

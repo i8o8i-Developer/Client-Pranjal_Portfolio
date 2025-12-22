@@ -34,12 +34,23 @@ const getEmbedUrl = (videoUrl) => {
 
 // Helper To Get Thumbnail URL With Google Drive Support
 const getThumbnailUrl = (edit) => {
-  // Priority: drive_file_id > thumbnail_url > fallback
+  // Priority: drive_file_id > thumbnail_url > video URL extraction
   if (edit.drive_file_id) {
-    return getGoogleDriveUrls.thumbnail(edit.drive_file_id);
+    return getGoogleDriveUrls.thumbnail(edit.drive_file_id, 800);
   }
   if (edit.thumbnail_url) {
     return getFullUrl(edit.thumbnail_url);
+  }
+  // Try to generate thumbnail from video URL if it's YouTube
+  if (edit.video_url && (edit.video_url.includes('youtube.com') || edit.video_url.includes('youtu.be'))) {
+    const match = edit.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
+    const id = match ? match[1] : null;
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+  }
+  // Try to extract Google Drive ID from URL
+  if (edit.video_url && edit.video_url.includes('drive.google.com')) {
+    const fileId = getGoogleDriveUrls.extractId(edit.video_url);
+    if (fileId) return getGoogleDriveUrls.thumbnail(fileId, 800);
   }
   return null;
 };
@@ -165,29 +176,31 @@ export default function VideoEditing() {
                     whileHover={{ y: -5 }}
                     onClick={() => setSelectedEdit(edit)}
                   >
-                    {getThumbnailUrl(edit) ? (
-                      <img src={getThumbnailUrl(edit)} alt={edit.title} loading="lazy" />
-                    ) : (edit.video_url || edit.drive_file_id) ? (
-                      isEmbeddable(edit.video_url) || edit.drive_file_id ? (
-                        <iframe
-                          src={getVideoEmbedUrl(edit)}
-                          title={edit.title}
-                          style={{ width: '100%', height: '180px', borderRadius: '10px', background: '#222', border: 'none', pointerEvents: 'none' }}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <video
-                          className="video-preview"
-                          src={getFullVideoUrl(edit)}
-                          controls={false}
-                          preload="metadata"
-                          style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#222', borderRadius: '10px', pointerEvents: 'none' }}
-                          onMouseOver={e => e.target.play()}
-                          onMouseOut={e => e.target.pause()}
-                        />
-                      )
-                    ) : null}
+                    {(() => {
+                      const thumb = getThumbnailUrl(edit);
+                      if (thumb) {
+                        return <img src={thumb} alt={edit.title} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />;
+                      } else if (edit.video_url || edit.drive_file_id) {
+                        return (
+                          <div className="video-preview-outer">
+                            <video
+                              className="video-preview"
+                              src={getFullVideoUrl(edit)}
+                              controls={false}
+                              preload="metadata"
+                              onMouseOver={e => e.target.play()}
+                              onMouseOut={e => e.target.pause()}
+                            />
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="video-placeholder">
+                            <span>▶</span>
+                          </div>
+                        );
+                      }
+                    })()}
                     <div className="photo-overlay">
                       <h3>{edit.title}</h3>
                     </div>
