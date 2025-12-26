@@ -33,9 +33,11 @@ export const getPhotoCategories = () => api.get('/api/photos/categories');
 
 // Videos
 export const getVideos = (params) => api.get('/api/videos', { params: { ...params, published_only: true } });
+export const getVideoCategories = () => api.get('/api/videos/categories');
 
 // Edits
 export const getEdits = (params) => api.get('/api/edits', { params: { ...params, published_only: true } });
+export const getEditCategories = () => api.get('/api/edits/categories');
 export const getFeaturedEdit = () => api.get('/api/edits/featured');
 
 // Contact

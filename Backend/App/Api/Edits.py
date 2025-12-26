@@ -12,6 +12,7 @@ router = APIRouter()
 @router.get("", response_model=List[EditProject])
 async def get_edits(
     published_only: bool = True,
+    category: str = None,
     skip: int = 0,
     limit: int = 100
 ):
@@ -21,10 +22,20 @@ async def get_edits(
     if published_only:
         query["published"] = True
     
+    if category:
+        query["category"] = category
+    
     cursor = db.edit_projects.find(query).sort("order", 1).skip(skip).limit(limit)
     edits = await cursor.to_list(length=limit)
     
     return edits
+
+
+@router.get("/categories", response_model=dict)
+async def get_edit_categories():
+    db = get_database()
+    categories = await db.edit_projects.distinct("category")
+    return {"categories": categories}
 
 
 @router.get("/featured", response_model=EditProject)

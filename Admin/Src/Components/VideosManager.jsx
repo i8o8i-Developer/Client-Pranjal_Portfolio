@@ -50,11 +50,13 @@ export default function VideosManager() {
     video_type: 'youtube',
     video_url: '',
     thumbnail_url: '',
+    category: '',
     tags: [],
     published: true,
     order: 0
   });
   const [newTag, setNewTag] = useState('');
+  const [categories] = useState(['Music Video', 'Documentary', 'Commercial', 'Short Film', 'Corporate', 'Wedding', 'Event', 'Cinematic', 'Other']);
 
   useEffect(() => {
     loadVideos();
@@ -84,6 +86,7 @@ export default function VideosManager() {
       video_type: 'youtube',
       video_url: '',
       thumbnail_url: '',
+      category: '',
       tags: [],
       published: true,
       order: 0
@@ -101,6 +104,7 @@ export default function VideosManager() {
         video_type: video.video_type || 'youtube',
         video_url: video.video_url || '',
         thumbnail_url: video.thumbnail_url || '',
+        category: video.category || '',
         tags: video.tags || [],
         published: video.published !== undefined ? video.published : true,
         order: video.order || 0
@@ -384,6 +388,19 @@ export default function VideosManager() {
                   value={formData.description}
                   onChange={handleChange}
                   rows="3"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Category</label>
+                <CustomSelect
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  options={[
+                    { value: '', label: 'Select Category...' },
+                    ...categories.map(cat => ({ value: cat, label: cat }))
+                  ]}
                 />
               </div>
 

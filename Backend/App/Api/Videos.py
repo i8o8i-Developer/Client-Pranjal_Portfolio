@@ -13,6 +13,7 @@ router = APIRouter()
 @router.get("", response_model=List[VideoProject])
 async def get_videos(
     published_only: bool = True,
+    category: str = None,
     skip: int = 0,
     limit: int = 100
 ):
@@ -21,6 +22,9 @@ async def get_videos(
     query = {}
     if published_only:
         query["published"] = True
+    
+    if category:
+        query["category"] = category
     
     cursor = db.video_projects.find(query).sort("order", 1).skip(skip).limit(limit)
     videos = await cursor.to_list(length=limit)
@@ -32,6 +36,13 @@ async def get_videos(
             video['thumbnail_url'] = drive.get_thumbnail_url(video['drive_file_id'])
     
     return videos
+
+
+@router.get("/categories", response_model=dict)
+async def get_video_categories():
+    db = get_database()
+    categories = await db.video_projects.distinct("category")
+    return {"categories": categories}
 
 
 @router.get("/{video_id}", response_model=VideoProject)

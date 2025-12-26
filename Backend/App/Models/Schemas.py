@@ -119,6 +119,7 @@ class VideoProjectBase(BaseModel):
     video_url: str  # Can Be YouTube URL, Vimeo URL, Or Google Drive File ID
     thumbnail_url: Optional[str] = None
     drive_file_id: Optional[str] = None  # Google Drive File ID For Gdrive Type
+    category: Optional[str] = None
     tags: List[str] = []
     published: bool = True
     order: int = 0
@@ -135,6 +136,7 @@ class VideoProjectUpdate(BaseModel):
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
     drive_file_id: Optional[str] = None
+    category: Optional[str] = None
     tags: Optional[List[str]] = None
     published: Optional[bool] = None
     order: Optional[int] = None
@@ -168,6 +170,7 @@ class EditProjectBase(BaseModel):
     drive_file_id: Optional[str] = None  # Google Drive File ID For Video
     before_drive_id: Optional[str] = None  # Google Drive File ID For Before Image
     after_drive_id: Optional[str] = None  # Google Drive File ID For After Image
+    category: Optional[str] = None
     tags: List[str] = []
     published: bool = True
     order: int = 0
@@ -188,6 +191,7 @@ class EditProjectUpdate(BaseModel):
     drive_file_id: Optional[str] = None
     before_drive_id: Optional[str] = None
     after_drive_id: Optional[str] = None
+    category: Optional[str] = None
     tags: Optional[List[str]] = None
     published: Optional[bool] = None
     order: Optional[int] = None

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getEdits, getFeaturedEdit, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getEdits, getEditCategories, getFeaturedEdit, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Photography.css';
 
 // Helper To Get Full URL
@@ -77,26 +77,50 @@ const getFullVideoUrl = (edit) => {
 
 export default function VideoEditing() {
   const [edits, setEdits] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [featuredEdit, setFeaturedEdit] = useState(null);
   const [selectedEdit, setSelectedEdit] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    loadEdits();
+  }, [selectedCategory]);
+
   const loadData = async () => {
     try {
-      const [editsResponse, featuredResponse] = await Promise.all([
-        getEdits(),
+      const [categoriesResponse, featuredResponse] = await Promise.all([
+        getEditCategories(),
         getFeaturedEdit().catch(() => null),
       ]);
-      setEdits(editsResponse.data);
+      setCategories(['all', ...categoriesResponse.data.categories]);
       if (featuredResponse) {
         setFeaturedEdit(featuredResponse.data);
       }
+      setError(null);
+    } catch (error) {
+      console.error('Error Loading Data:', error);
+      setError('Failed To Load Data');
+      setCategories(['all']);
+    }
+  };
+
+  const loadEdits = async () => {
+    setLoading(true);
+    try {
+      const params = selectedCategory !== 'all' ? { category: selectedCategory } : {};
+      const editsResponse = await getEdits(params);
+      setEdits(editsResponse.data);
+      setError(null);
     } catch (error) {
       console.error('Error Loading Edits:', error);
+      setError('Failed To Load Edits. Please Try Again Later.');
+      setEdits([]);
     } finally {
       setLoading(false);
     }
@@ -158,6 +182,20 @@ export default function VideoEditing() {
       <section className="gallery-section">
         <div className="container">
           <h2 className="section-title">Recent Projects</h2>
+          {categories.length > 0 && (
+            <div className="filter-bar">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  className={`filter-button ${selectedCategory === category ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+
           {loading ? (
             <div className="loading">
               <div className="spinner"></div>
@@ -203,6 +241,7 @@ export default function VideoEditing() {
                     })()}
                     <div className="photo-overlay">
                       <h3>{edit.title}</h3>
+                      {edit.category && <p>{edit.category}</p>}
                     </div>
                   </motion.div>
                 ))}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getVideos, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getVideos, getVideoCategories, API_URL, getGoogleDriveUrls } from '../services/Api.js';
 import './Photography.css';
 
 // Helper To Get Full URL For Images
@@ -38,19 +38,43 @@ const getPreviewThumbnail = (video) => {
 
 export default function Videography() {
   const [videos, setVideos] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   useEffect(() => {
     loadVideos();
-  }, []);
+  }, [selectedCategory]);
+
+  const loadData = async () => {
+    try {
+      const categoriesResponse = await getVideoCategories();
+      setCategories(['all', ...categoriesResponse.data.categories]);
+      setError(null);
+    } catch (error) {
+      console.error('Error Loading Categories:', error);
+      setError('Failed To Load Categories');
+      setCategories(['all']);
+    }
+  };
 
   const loadVideos = async () => {
+    setLoading(true);
     try {
-      const response = await getVideos();
+      const params = selectedCategory !== 'all' ? { category: selectedCategory } : {};
+      const response = await getVideos(params);
       setVideos(response.data);
+      setError(null);
     } catch (error) {
       console.error('Error Loading Videos:', error);
+      setError('Failed To Load Videos. Please Try Again Later.');
+      setVideos([]);
     } finally {
       setLoading(false);
     }
@@ -107,6 +131,20 @@ export default function Videography() {
 
       <section className="gallery-section">
         <div className="container">
+          {categories.length > 0 && (
+            <div className="filter-bar">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  className={`filter-button ${selectedCategory === category ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+
           {loading ? (
             <div className="loading">
               <div className="spinner"></div>
@@ -151,7 +189,7 @@ export default function Videography() {
                   })()}
                   <div className="photo-overlay">
                     <h3>{video.title}</h3>
-                    <p>{video.video_type}</p>
+                    <p>{video.category || video.video_type}</p>
                   </div>
                 </motion.div>
               ))}

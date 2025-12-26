@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getEdits, createEdit, updateEdit, deleteEdit, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import CustomSelect from './CustomSelect.jsx';
 import './Manager.css';
 
 // Helper To Get Full URL
@@ -83,12 +84,14 @@ export default function EditsManager() {
     thumbnail_url: '',
     before_url: '',
     after_url: '',
+    category: '',
     tags: [],
     published: true,
     order: 0,
     is_featured: false
   });
   const [newTag, setNewTag] = useState('');
+  const [categories] = useState(['Color Grading', 'Visual Effects', 'Motion Graphics', 'Music Video', 'Commercial', 'Film Edit', 'Wedding', 'Event', 'Other']);
 
   useEffect(() => {
     loadEdits();
@@ -119,6 +122,7 @@ export default function EditsManager() {
       thumbnail_url: '',
       before_url: '',
       after_url: '',
+      category: '',
       tags: [],
       published: true,
       order: 0,
@@ -138,6 +142,7 @@ export default function EditsManager() {
         thumbnail_url: edit.thumbnail_url || '',
         before_url: edit.before_url || '',
         after_url: edit.after_url || '',
+        category: edit.category || '',
         tags: edit.tags || [],
         published: edit.published !== undefined ? edit.published : true,
         order: edit.order || 0,
@@ -391,6 +396,19 @@ export default function EditsManager() {
                   value={formData.description}
                   onChange={handleChange}
                   rows="3"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Category</label>
+                <CustomSelect
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  options={[
+                    { value: '', label: 'Select Category...' },
+                    ...categories.map(cat => ({ value: cat, label: cat }))
+                  ]}
                 />
               </div>
 
