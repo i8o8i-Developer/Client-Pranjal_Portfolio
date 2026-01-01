@@ -1,4 +1,5 @@
 import React from 'react';
+import { MdDashboard, MdPerson, MdPhotoCamera, MdMovie, MdEdit, MdMail } from 'react-icons/md';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import Overview from '../Components/Overview.jsx';
 import ProfileManager from '../Components/ProfileManager.jsx';
@@ -19,12 +20,12 @@ export default function Dashboard({ setIsAuthenticated }) {
   };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Overview', icon: '📊' },
-    { path: '/dashboard/profile', label: 'Profile', icon: '👤' },
-    { path: '/dashboard/photos', label: 'Photography', icon: '📷' },
-    { path: '/dashboard/videos', label: 'Videography', icon: '🎬' },
-    { path: '/dashboard/edits', label: 'Video Editing', icon: '✂️' },
-    { path: '/dashboard/messages', label: 'Messages', icon: '✉️' },
+    { path: '/dashboard', label: 'Overview', icon: <MdDashboard /> },
+    { path: '/dashboard/profile', label: 'Profile', icon: <MdPerson /> },
+    { path: '/dashboard/photos', label: 'Photography', icon: <MdPhotoCamera /> },
+    { path: '/dashboard/videos', label: 'Videography', icon: <MdMovie /> },
+    { path: '/dashboard/edits', label: 'Video Editing', icon: <MdEdit /> },
+    { path: '/dashboard/messages', label: 'Messages', icon: <MdMail /> },
   ];
 
   const isActive = (path) => {

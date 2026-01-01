@@ -1,13 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from typing import List
 from bson import ObjectId
 from App.Models.Schemas import VideoProject, VideoProjectCreate, VideoProjectUpdate
 from App.Core.Database import get_database
 from App.Api.Auth import get_current_user
-from App.Core.GoogleDrive import get_drive_service, get_media_urls
+from App.Core.CloudinaryUtil import upload_image_to_cloudinary
 from datetime import datetime
 
 router = APIRouter()
+# Cloudinary Upload Endpoint For Videos
+@router.post("/upload-video")
+async def upload_video_file(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user)
+):
+    # Upload video to Cloudinary (resource_type="video")
+    from App.Core.CloudinaryUtil import cloudinary
+    result = cloudinary.uploader.upload(
+        await file.read(),
+        folder="video_files",
+        resource_type="video"
+    )
+    return {"video_url": result["secure_url"]}
+
+# Cloudinary Upload Endpoint For Video Thumbnails
+@router.post("/upload-thumbnail")
+async def upload_video_thumbnail(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user)
+):
+    url = upload_image_to_cloudinary(await file.read(), folder="video_thumbnails")
+    return {"thumbnail_url": url}
 
 
 @router.get("", response_model=List[VideoProject])
@@ -28,12 +52,6 @@ async def get_videos(
     
     cursor = db.video_projects.find(query).sort("order", 1).skip(skip).limit(limit)
     videos = await cursor.to_list(length=limit)
-    
-    # Process Google Drive file IDs To Ensure Thumbnail URLs Are Available
-    for video in videos:
-        if video.get('drive_file_id') and not video.get('thumbnail_url'):
-            drive = get_drive_service()
-            video['thumbnail_url'] = drive.get_thumbnail_url(video['drive_file_id'])
     
     return videos
 
@@ -66,26 +84,11 @@ async def create_video(
     current_user: str = Depends(get_current_user)
 ):
     db = get_database()
-    drive = get_drive_service()
-    
     video_dict = video.dict()
-    
-    # If video_url Is A Google Drive URL, Extract The file ID
-    if video_dict['video_type'] == 'gdrive' or 'drive.google.com' in video_dict['video_url']:
-        file_id = drive.extract_file_id_from_url(video_dict['video_url'])
-        if file_id:
-            video_dict['drive_file_id'] = file_id
-            video_dict['video_type'] = 'gdrive'
-            # Generate Thumbnail URL If Not Provided
-            if not video_dict.get('thumbnail_url'):
-                video_dict['thumbnail_url'] = drive.get_thumbnail_url(file_id)
-    
     video_dict["created_at"] = datetime.utcnow()
     video_dict["updated_at"] = datetime.utcnow()
-    
     result = await db.video_projects.insert_one(video_dict)
     created_video = await db.video_projects.find_one({"_id": result.inserted_id})
-    
     return created_video
 
 

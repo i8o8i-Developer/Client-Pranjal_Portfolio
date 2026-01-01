@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from App.Core.Config import settings
 from App.Core.Database import connect_to_mongo, close_mongo_connection
-from App.Api import Auth as auth, Profile as profile, Photos as photos, Videos as videos, Edits as edits, Contact as contact, Analytics as analytics, Media as media
+from App.Api import Auth as auth, Profile as profile, Photos as photos, Videos as videos, Edits as edits, Contact as contact, Analytics as analytics
 import logging
 
 # Configure logging
@@ -42,7 +42,7 @@ app = FastAPI(
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["*"],  # Allow All Origins For Development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,4 +72,3 @@ app.include_router(edits.router, prefix="/api/edits", tags=["Video Editing"])
 app.include_router(contact.router, prefix="/api/contact", tags=["Contact"])
 # Upload Router Removed - All Media Now Handled Via Google Drive
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
-app.include_router(media.router, prefix="/api/media", tags=["Media - Google Drive"])

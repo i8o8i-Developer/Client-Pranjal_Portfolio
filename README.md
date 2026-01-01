@@ -1,4 +1,4 @@
-# 🎨 Pranjal Portfolio
+# Pranjal Portfolio
 
 <div align="center">
 
@@ -15,64 +15,64 @@
 
 ---
 
-## ✨ Overview
+## Overview
 
 Welcome To The Digital Showcase Of Pranjal, Where Creativity Meets Technology. This Sophisticated Full-Stack Web Application Presents A Mesmerizing Portfolio Experience Featuring Immersive 3D Visualizations, Seamless Animations, And A Comprehensive Content Management System.
 
-🎯 **Specialized In** : Photography • Videography • Video Editing  
-🚀 **Built With** : Modern Web Technologies  
-🔒 **Copyright Protected** : All Content © Pranjal
+**Specialized In**: Photography • Videography • Video Editing  
+**Built With**: Modern Web Technologies  
+**Copyright Protected**: All Content © Pranjal
 
-## ✨ Features
+## Features
 
-### 🎨 Frontend Portfolio
-
-<div align="center">
-
-| Feature | Description |
-|---------|-------------|
-| 🌟 **3D Immersion** | Interactive Three.js Background With Dynamic Scroll Effects |
-| 📱 **Responsive Design** | Flawless Experience Across All Devices And Screen Sizes |
-| 🎭 **Smooth Animations** | Framer Motion-Powered Transitions For Engaging Interactions |
-| 📸 **Portfolio Galleries** | Dedicated Sections For Photography, Videography, And Video Editing |
-| 📝 **Contact Integration** | Seamless Contact Form With Real-Time Backend Processing |
-| 📊 **Analytics Tracking** | Intelligent Page Visit Monitoring For Performance Insights |
-
-</div>
-
-### 🔧 Admin Panel
+### Frontend Portfolio
 
 <div align="center">
 
 | Feature | Description |
 |---------|-------------|
-| 🔐 **Secure Access** | JWT-Based Authentication System For Admin Protection |
-| 🎛️ **Content Management** | Intuitive Interface For Portfolio Content Administration |
-| 📤 **File Upload** | Drag-And-Drop Upload System For Media Files |
-| 👤 **Profile Control** | Dynamic Personal Information And Biography Management |
-| 💬 **Message Center** | Comprehensive Contact Form Submission Management |
-| 📈 **Dashboard Analytics** | Real-Time Insights And Management Overview |
+| **3D Immersion** | Interactive Three.js Background With Dynamic Scroll Effects |
+| **Responsive Design** | Flawless Experience Across All Devices And Screen Sizes |
+| **Smooth Animations** | Framer Motion-Powered Transitions For Engaging Interactions |
+| **Portfolio Galleries** | Dedicated Sections For Photography, Videography, And Video Editing |
+| **Contact Integration** | Seamless Contact Form With Real-Time Backend Processing |
+| **Analytics Tracking** | Intelligent Page Visit Monitoring For Performance Insights |
 
 </div>
 
-### ⚡ Backend API
+### Admin Panel
 
 <div align="center">
 
 | Feature | Description |
 |---------|-------------|
-| 🔌 **RESTful Architecture** | Comprehensive API Endpoints For All Portfolio Operations |
-| 🛡️ **Security First** | Robust Authentication And Authorization With JWT |
-| 📁 **Media Handling** | Efficient File Upload And Storage Solutions |
-| 🗄️ **Database Integration** | MongoDB For Flexible And Scalable Data Management |
-| 📧 **Email Services** | SMTP Integration For Contact Form Notifications |
-| 🌐 **CORS Enabled** | Seamless Cross-Origin Communication Support |
+| **Secure Access** | JWT-Based Authentication System For Admin Protection |
+| **Content Management** | Intuitive Interface For Portfolio Content Administration |
+| **File Upload** | Drag-And-Drop Upload System For Media Files |
+| **Profile Control** | Dynamic Personal Information And Biography Management |
+| **Message Center** | Comprehensive Contact Form Submission Management |
+| **Dashboard Analytics** | Real-Time Insights And Management Overview |
 
 </div>
 
-## 🛠️ Tech Stack
+### Backend API
 
-### 🎨 Frontend
+<div align="center">
+
+| Feature | Description |
+|---------|-------------|
+| **RESTful Architecture** | Comprehensive API Endpoints For All Portfolio Operations |
+| **Security First** | Robust Authentication And Authorization With JWT |
+| **Media Handling** | Efficient File Upload And Storage Solutions |
+| **Database Integration** | MongoDB For Flexible And Scalable Data Management |
+| **Email Services** | SMTP Integration For Contact Form Notifications |
+| **CORS Enabled** | Seamless Cross-Origin Communication Support |
+
+</div>
+
+## Tech Stack
+
+### Frontend
 ```mermaid
 graph TD
     A[React 18] --> B[Vite]
@@ -85,64 +85,66 @@ graph TD
     E --> I[API Communication]
 ```
 
-- **⚛️ React 18** - Modern Component-Based UI Framework
-- **⚡ Vite** - Lightning-Fast Build Tool And Dev Server
-- **🎲 Three.js** - Powerful 3D Graphics Library
-- **🎭 Framer Motion** - Production-Ready Animation Library
-- **📡 Axios** - Promise-Based HTTP Client
-- **🧭 React Router** - Declarative Routing For React
+- **React 18** - Modern Component-Based UI Framework
+- **Vite** - Lightning-Fast Build Tool And Dev Server
+- **Three.js** - Powerful 3D Graphics Library
+- **Framer Motion** - Production-Ready Animation Library
+- **Axios** - Promise-Based HTTP Client
+- **React Router** - Declarative Routing For React
 
-### 🔧 Backend
+
+### Backend
 ```mermaid
 graph TD
-    A[FastAPI] --> B[Uvicorn]
-    A --> C[Motor]
-    A --> D[Pydantic]
-    A --> E[Google Drive API]
-    B --> E[ASGI Server]
-    C --> F[MongoDB Driver]
-    D --> G[Data Validation]
+   A[FastAPI] --> B[Uvicorn]
+   A --> C[Motor]
+   A --> D[Pydantic]
+   A --> E[Cloudinary SDK]
+   B --> E[ASGI Server]
+   C --> F[MongoDB Driver]
+   D --> G[Data Validation]
 ```
 
-- **🚀 FastAPI** - High-Performance Python Web Framework
-- **⚡ Uvicorn** - Lightning-Fast ASGI Server
-- **🍃 Motor** - Asynchronous MongoDB Driver
-- **📋 Pydantic** - Data Validation And Settings
-- **🔐 Python-Jose** - JSON Web Token Implementation
-- **🔒 Passlib** - Secure Password Hashing
-- **☁️ Google Drive API** - Cloud Media Storage & Serving
+- **FastAPI** - High-Performance Python Web Framework
+- **Uvicorn** - Lightning-Fast ASGI Server
+- **Motor** - Asynchronous MongoDB Driver
+- **Pydantic** - Data Validation And Settings
+- **Python-Jose** - JSON Web Token Implementation
+- **Passlib** - Secure Password Hashing
+- **Cloudinary SDK** - Cloud Media Storage & Serving
 
 ### 🗄️ Database & Infrastructure
-- **🍃 MongoDB** - NoSQL Document Database
-- **🌐 Nginx** - High-Performance Web Server
-- **☁️ Google Drive** - Free Cloud Storage For Media Files
+- **MongoDB** - NoSQL Document Database
+- **Nginx** - High-Performance Web Server
+- **Cloudinary** - Cloud Storage For Images & Videos
+- **YouTube** - Video Hosting & Streaming (for external videos)
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Pranjal-Portfolio/
-├── 🎨 Frontend/          # React Portfolio Application
-│   ├── 📱 Pages/         # Portfolio Display Pages
-│   ├── 🧩 Components/    # Reusable UI Components
-│   └── 🎯 Services/      # API Integration Layer
-├── 🔧 Admin/             # React Admin Panel
-│   ├── 📊 Dashboard/     # Management Interface
-│   ├── 📤 Upload/        # File Management
-│   └── 🔐 Auth/          # Authentication System
-├── ⚙️ Backend/           # FastAPI Server
-│   ├── 🔌 API/           # REST Endpoints
-│   ├── 🗄️ Database/      # Data Models & Connections
-│   └── 🛡️ Security/      # Authentication & Authorization
-└── 🌐 Nginx/             # Production Server Config
+├── Frontend/          # React Portfolio Application
+│   ├── Pages/         # Portfolio Display Pages
+│   ├── Components/    # Reusable UI Components
+│   └── Services/      # API Integration Layer
+├── Admin/             # React Admin Panel
+│   ├── Dashboard/     # Management Interface
+│   ├── Upload/        # File Management
+│   └── Auth/          # Authentication System
+├── Backend/           # FastAPI Server
+│   ├── API/           # REST Endpoints
+│   ├── Database/      # Data Models & Connections
+│   └── Security/      # Authentication & Authorization
+└── Nginx/             # Production Server Config
 ```
 
 ## 📋 Prerequisites
 
 Before You Begin, Ensure You Have These Installed:
 
-- 🐍 **Python 3.8+** - Backend Runtime
-- 🟢 **Node.js 18+** - Frontend Runtime
-- 🍃 **MongoDB 4.6+** - Database Server
+- **Python 3.8+** - Backend Runtime
+- **Node.js 18+** - Frontend Runtime
+- **MongoDB 4.6+** - Database Server
 -  **Git** - Version Control
 
 ## 🚀 Quick Start
@@ -155,11 +157,7 @@ Before You Begin, Ensure You Have These Installed:
    cd pranjal-portfolio
    ```
 
-2. **Setup Google Drive Integration** (Recommended for Free Hosting)
-   ```bash
-   # Follow the detailed guide:
-   See GOOGLE_DRIVE_SETUP.md
-   ```
+
 
 3. **Environment Setup**
    ```bash
@@ -178,16 +176,16 @@ Before You Begin, Ensure You Have These Installed:
    uvicorn App.Main:app --reload
 
    # Terminal 3: Start Frontend
-   cd Frontend && npm install && npm run dev
+   cd Frontend && npm install && npm start
 
    # Terminal 4: Start Admin
-   cd Admin && npm install && npm run dev
+   cd Admin && npm install && npm start
    ```
 
 5. **Access Applications**
-   - 🌐 **Portfolio**: http://localhost:5173
-   - 🔧 **Admin Panel**: http://localhost:5174
-   - 📚 **API Docs**: http://localhost:8000/docs
+   - **Portfolio**: http://localhost:5173
+   - **Admin Panel**: http://localhost:5174
+   - **API Docs**: http://localhost:8000/docs
 
 ## ⚙️ Configuration
 
@@ -205,12 +203,11 @@ JWT_SECRET=Your-Super-Secret-JWT-Key
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
-# Google Drive Configuration (NEW!)
-GOOGLE_DRIVE_ENABLED=true
-GOOGLE_DRIVE_FOLDER_ID=your-folder-id-here
-GOOGLE_SERVICE_ACCOUNT_FILE=./service-account.json
-# For Netlify/Production:
-# GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 
 # Admin Credentials
 ADMIN_EMAIL=admin@pranjal.com
@@ -227,9 +224,9 @@ FRONTEND_URL=http://localhost:3000
 ADMIN_URL=http://localhost:3001
 BACKEND_URL=http://localhost:8000
 
+
 # File Management
 MAX_FILE_SIZE=104857600
-UPLOAD_DIRECTORY=./Uploads
 
 # CORS Settings
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
@@ -242,32 +239,30 @@ ENVIRONMENT=development
 
 The Backend Provides Interactive API Documentation:
 
-- 📋 **Swagger UI**: `http://localhost:8000/docs`
-- 📖 **ReDoc**: `http://localhost:8000/redoc`
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
 
 ### 🎯 Key Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/auth/login` | 🔐 Admin Authentication |
-| `GET` | `/profile` | 👤 Get Profile Information |
-| `GET` | `/photos` | 📸 Get Photo Projects |
-| `GET` | `/videos` | 🎬 Get Video Projects |
-| `GET` | `/edits` | ✂️ Get Edit Projects |
-| `POST` | `/contact` | 📧 Submit Contact Form |
-| `GET` | `/media/drive/{file_id}` | ☁️ Get Google Drive File URLs |
-| `GET` | `/media/drive/{file_id}/thumbnail` | 🖼️ Get Thumbnail URL |
+| `POST` | `/auth/login` | Admin Authentication |
+| `GET` | `/profile` | Get Profile Information |
+| `GET` | `/photos` | Get Photo Projects |
+| `GET` | `/videos` | Get Video Projects |
+| `GET` | `/edits` | Get Edit Projects |
+| `POST` | `/contact` | Submit Contact Form |
+
 
 ## 📚 Documentation
 
-- **[Google Drive Setup Guide](./GOOGLE_DRIVE_SETUP.md)** - Complete setup for free cloud storage
-- **[Migration Guide](./MIGRATION_GUIDE.md)** - Migrate from old URL system to Google Drive
+- **[Migration Guide](./MIGRATION_GUIDE.md)** - Migrate from old URL system to Cloudinary
 - **[API Documentation](http://localhost:8000/docs)** - Interactive API reference
-| `POST` | `/photos/upload` | 📸 Upload Photography |
-| `POST` | `/videos/upload` | 🎬 Upload Videography |
-| `POST` | `/edits/upload` | ✂️ Upload Video Edits |
-| `POST` | `/contact` | 📧 Submit Contact Form |
-| `GET` | `/analytics` | 📊 Get Analytics Data |
+| `POST` | `/photos/upload` | Upload Photography |
+| `POST` | `/videos/upload` | Upload Videography |
+| `POST` | `/edits/upload` | Upload Video Edits |
+| `POST` | `/contact` | Submit Contact Form |
+| `GET` | `/analytics` | Get Analytics Data |
 
 ##  License
 
@@ -275,4 +270,4 @@ This Project Is Licensed Under The MIT License - See The [LICENSE](LICENSE) File
 
 **© 2025 Pranjal Portfolio. All Rights Reserved.**
 
-**🎨 This Portfolio Showcases The Work Of Pranjal, A Talented Photographer, Videographer, And Video Editor. All Content And Media Belongs To Pranjal And Is Protected Under Copyright Law.**
+This Portfolio Showcases The Work Of Pranjal, A Talented Photographer, Videographer, And Video Editor. All Content And Media Belongs To Pranjal And Is Protected Under Copyright Law.

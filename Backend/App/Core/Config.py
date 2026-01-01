@@ -29,11 +29,10 @@ class Settings(BaseSettings):
     backend_url: str = "http://localhost:8000"
     vite_api_url: str | None = None
     
-    # Google Drive Configuration (PRIMARY MEDIA STORAGE)
-    google_drive_enabled: bool = True
-    google_drive_folder_id: str = ""  # Set Your Google Drive folder ID
-    google_service_account_file: str = "./service-account.json"  # Path To Service Account JSON
-    google_service_account_json: str = ""  # Or Set As Environment Variable For Railway
+    # Cloudinary Configuration (PRIMARY MEDIA STORAGE)
+    cloudinary_cloud_name: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    cloudinary_api_key: str = os.getenv("CLOUDINARY_API_KEY", "")
+    cloudinary_api_secret: str = os.getenv("CLOUDINARY_API_SECRET", "")
     
     # CORS - Allow All Localhost Ports For Development
     cors_origins: str = "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:5173"

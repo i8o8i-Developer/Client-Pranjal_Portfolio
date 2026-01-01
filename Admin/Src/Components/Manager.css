@@ -360,15 +360,16 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(0, 0, 0, 0.75);
-  color: var(--admin-accent);
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.65rem;
+  background: #222;
+  color: #ffd700;
+  padding: 0.2rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  backdrop-filter: blur(4px);
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  text-transform: none;
+  z-index: 10;
 }
 
 .item-overlay {

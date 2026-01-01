@@ -1,12 +1,34 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from typing import List
 from bson import ObjectId
 from App.Models.Schemas import Profile, ProfileCreate, ProfileUpdate
+from App.Core.CloudinaryUtil import upload_image_to_cloudinary
 from App.Core.Database import get_database
 from App.Api.Auth import get_current_user
 from datetime import datetime
 
 router = APIRouter()
+
+
+@router.post("/upload-image", response_model=Profile)
+async def upload_profile_image(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user)
+):
+    db = get_database()
+    existing = await db.profiles.find_one()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Profile Not Found. Create Profile First.")
+
+    # Upload To Cloudinary
+    image_url = upload_image_to_cloudinary(await file.read())
+
+    # Update profile_image Field
+    await db.profiles.update_one({"_id": existing["_id"]}, {"$set": {"profile_image": image_url, "updated_at": datetime.utcnow()}})
+    updated_profile = await db.profiles.find_one({"_id": existing["_id"]})
+    if updated_profile and "_id" in updated_profile:
+        updated_profile["_id"] = str(updated_profile["_id"])
+    return updated_profile
 
 
 @router.get("", response_model=Profile)
@@ -73,12 +95,12 @@ async def update_profile(
     
     existing = await db.profiles.find_one()
     
-    # Use model_dump() for Pydantic v2, exclude_unset keeps all fields including empty strings
+    # Use model_dump() For Pydantic v2, exclude_unset Keeps All Fields Including Empty Strings
     profile_dict = profile.model_dump(exclude_unset=False)
     profile_dict["updated_at"] = datetime.utcnow()
     
-    print(f"DEBUG: Updating profile with data: {profile_dict}")
-    print(f"DEBUG: Existing profile ID: {existing['_id'] if existing else 'None'}")
+    print(f"DEBUG: Updating Profile With Data: {profile_dict}")
+    print(f"DEBUG: Existing Profile ID: {existing['_id'] if existing else 'None'}")
     
     if existing:
         await db.profiles.update_one(
@@ -86,12 +108,12 @@ async def update_profile(
             {"$set": profile_dict}
         )
         updated_profile = await db.profiles.find_one({"_id": existing["_id"]})
-        print(f"DEBUG: Updated profile from DB: {updated_profile}")
+        print(f"DEBUG: Updated Profile From DB: {updated_profile}")
     else:
         profile_dict["created_at"] = datetime.utcnow()
         result = await db.profiles.insert_one(profile_dict)
         updated_profile = await db.profiles.find_one({"_id": result.inserted_id})
-        print(f"DEBUG: Created new profile: {updated_profile}")
+        print(f"DEBUG: Created New Profile: {updated_profile}")
     
     if updated_profile and "_id" in updated_profile:
         updated_profile["_id"] = str(updated_profile["_id"])

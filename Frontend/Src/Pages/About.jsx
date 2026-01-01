@@ -1,27 +1,19 @@
+import { getProfile, API_URL } from '../services/Api.js';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getProfile, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+// Only Import What Is Needed (No Google Drive)
 import './About.css';
 
-// Helper To Get Full URL For Images
+// Helper To Get Full URL For Images (Cloudinary Or Direct)
 const getFullImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   return `${API_URL}${url}`;
 };
 
-// Helper To Get Profile Image URL With Google Drive Support
+// Helper To Get Profile Image URL (Cloudinary/Direct Only)
 const getProfileImageUrl = (profile) => {
-  // Check For Dedicated drive_file_id Field First
-  if (profile.profile_drive_id) {
-    return getGoogleDriveUrls.thumbnail(profile.profile_drive_id, 800);
-  }
-  // Try To Extract File ID From profile_image URL If It's A Google Drive URL
   if (profile.profile_image) {
-    const extractedId = getGoogleDriveUrls.extractId(profile.profile_image);
-    if (extractedId) {
-      return getGoogleDriveUrls.thumbnail(extractedId, 800);
-    }
     return getFullImageUrl(profile.profile_image);
   }
   return '';
@@ -102,7 +94,7 @@ export default function About() {
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              {(profile?.profile_image || profile?.profile_drive_id) ? (
+              {profile?.profile_image ? (
                 <img src={getProfileImageUrl(profile)} alt={profile.full_name} />
               ) : (
                 <div className="image-placeholder">

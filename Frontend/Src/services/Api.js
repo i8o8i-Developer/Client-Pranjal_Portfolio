@@ -53,51 +53,6 @@ export const trackPageVisit = (page) => {
   });
 };
 
-// Google Drive Media URLs
-export const getDriveFileUrls = (fileId) => api.get(`/api/media/drive/${fileId}`);
-export const getDriveThumbnail = (fileId, size = 800) => api.get(`/api/media/drive/${fileId}/thumbnail`, { params: { size } });
-export const getDriveDirectUrl = (fileId) => api.get(`/api/media/drive/${fileId}/direct`);
-export const getDriveEmbedUrl = (fileId) => api.get(`/api/media/drive/${fileId}/embed`);
-export const extractDriveFileId = (url) => api.post('/api/media/drive/extract-id', { url });
-
-// Helper Functions for Google Drive
-export const getGoogleDriveUrls = {
-  /**
-   * Get Direct download/view URL For Google Drive File
-   * Using lh3.googleusercontent.com for better image loading
-   */
-  direct: (fileId) => `https://lh3.googleusercontent.com/d/${fileId}`,
-  
-  /**
-   * Get Thumbnail URL For Google Drive File
-   */
-  thumbnail: (fileId, size = 800) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`,
-  
-  /**
-   * Get Embed URL For Google Drive Video
-   */
-  embed: (fileId) => `https://drive.google.com/file/d/${fileId}/preview`,
-  
-  /**
-   * Extract file ID From Google Drive URL
-   */
-  extractId: (url) => {
-    if (!url) return null;
-    // Pattern For /d/{file_id}
-    let match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (match) return match[1];
-    
-    // Pattern For id={file_id}
-    match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (match) return match[1];
-    
-    // If It's Already Just An ID
-    if (/^[a-zA-Z0-9_-]+$/.test(url)) return url;
-    
-    return null;
-  }
-};
-
 // Export API_URL for use in components
 export { API_URL };
 

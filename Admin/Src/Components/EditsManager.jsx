@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEdits, createEdit, updateEdit, deleteEdit, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getEdits, createEdit, updateEdit, deleteEdit, API_URL } from '../services/Api.js';
 import CustomSelect from './CustomSelect.jsx';
 import './Manager.css';
 
@@ -10,55 +10,35 @@ const getFullUrl = (url) => {
   return `${API_URL}${url}`;
 };
 
-// Helper To Get Thumbnail URL With Google Drive Support
+// Helper To Get Thumbnail URL
 const getThumbnailUrl = (edit) => {
-  if (edit.drive_file_id) {
-    return getGoogleDriveUrls.thumbnail(edit.drive_file_id);
-  }
   if (edit.thumbnail_url) {
     return getFullUrl(edit.thumbnail_url);
   }
   return null;
 };
 
-// Helper To Get Before Image URL With Google Drive Support
+// Helper To Get Before Image URL
 const getBeforeUrl = (edit) => {
-  if (edit.before_drive_id) {
-    return getGoogleDriveUrls.direct(edit.before_drive_id);
-  }
   return getFullUrl(edit.before_url);
 };
 
-// Helper To Get After Image URL With Google Drive Support
+// Helper To Get After Image URL
 const getAfterUrl = (edit) => {
-  if (edit.after_drive_id) {
-    return getGoogleDriveUrls.direct(edit.after_drive_id);
-  }
   return getFullUrl(edit.after_url);
 };
 
-// Helper To Convert YouTube Or Google Drive URL To Embed Format
+// Helper To Convert YouTube URL To Embed Format
 const getEmbedUrl = (url) => {
   if (!url) return null;
-  
   // YouTube Support
   const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
   if (youtubeMatch) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-  
-  // Google Drive Support
-  const gdriveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (gdriveMatch) return `https://drive.google.com/file/d/${gdriveMatch[1]}/preview`;
-  const gdriveIdMatch = url.match(/id=([a-zA-Z0-9_-]+)/);
-  if (gdriveIdMatch) return `https://drive.google.com/file/d/${gdriveIdMatch[1]}/preview`;
-  
   return url;
 };
 
 // Helper To Get Embed URL With Google Drive Support
 const getVideoEmbedUrl = (edit) => {
-  if (edit.drive_file_id) {
-    return getGoogleDriveUrls.embed(edit.drive_file_id);
-  }
   if (edit.video_url) {
     return getEmbedUrl(edit.video_url);
   }
@@ -67,10 +47,46 @@ const getVideoEmbedUrl = (edit) => {
 
 // Helper To Check If URL Is Embeddable
 const isEmbeddable = (url) => {
-  return url && (url.includes('youtube') || url.includes('youtu.be') || url.includes('drive.google.com'));
+  return url && (url.includes('youtube') || url.includes('youtu.be'));
+};
+
+// Helper To Format Video Type As Pascal Case
+const toPascalCase = (str) => {
+  if (!str) return 'Cloudinary';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 export default function EditsManager() {
+    // Handle Cloudinary Video Upload
+    const [videoFile, setVideoFile] = useState(null);
+    const [uploadingVideo, setUploadingVideo] = useState(false);
+
+    const handleVideoUpload = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      setVideoFile(file);
+      setUploadingVideo(true);
+      try {
+        const formDataData = new FormData();
+        formDataData.append('file', file);
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`${API_URL}/api/edits/upload-video`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: formDataData
+        });
+        if (!res.ok) throw new Error('Video Upload Failed');
+        const data = await res.json();
+        setFormData(prev => ({ ...prev, video_url: data.video_url }));
+        showMessage('success', 'Video Uploaded!');
+      } catch (err) {
+        showMessage('error', 'Failed To Upload Video');
+      } finally {
+        setUploadingVideo(false);
+      }
+    };
   const [edits, setEdits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -280,9 +296,9 @@ export default function EditsManager() {
               {edit.is_featured && <span className="featured-badge">★ Featured</span>}
               <div className="item-image video-thumbnail">
                 {getThumbnailUrl(edit) ? (
-                  <img src={getThumbnailUrl(edit)} alt={edit.title} />
-                ) : (edit.video_url || edit.drive_file_id) ? (
-                  isEmbeddable(edit.video_url) || edit.drive_file_id ? (
+                  <img src={getThumbnailUrl(edit)} alt={edit.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />
+                ) : (edit.video_url) ? (
+                  isEmbeddable(edit.video_url) ? (
                     <iframe
                       src={getVideoEmbedUrl(edit)}
                       title="Video Preview"
@@ -292,9 +308,16 @@ export default function EditsManager() {
                       style={{ width: '100%', height: '180px' }}
                     ></iframe>
                   ) : (
-                    <video controls src={getFullUrl(edit.video_url)} style={{ width: '100%', maxHeight: '180px' }}>
-                      Your Browser Does Not Support the Video Tag.
-                    </video>
+                    <div style={{ width: '100%', aspectRatio: '16/9', background: '#181818', borderRadius: '10px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <video
+                        src={getFullUrl(edit.video_url)}
+                        controls={false}
+                        preload="metadata"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#222' }}
+                        onMouseOver={e => e.target.play()}
+                        onMouseOut={e => e.target.pause()}
+                      />
+                    </div>
                   )
                 ) : (
                   <div className="no-image">
@@ -305,6 +328,7 @@ export default function EditsManager() {
                   <button className="edit-btn" onClick={() => openModal(edit)}>Edit</button>
                   <button className="delete-btn" onClick={() => handleDelete(edit._id)}>Delete</button>
                 </div>
+                <span className="video-type-badge">{toPascalCase(edit.video_type)}</span>
               </div>
               <div className="item-content">
                 <h3>{edit.title}</h3>
@@ -356,26 +380,52 @@ export default function EditsManager() {
               </div>
 
               <div className="form-group">
-                <label>Video URL (YouTube / Google Drive / Direct Link)</label>
-                <input
-                  type="url"
-                  name="video_url"
-                  value={formData.video_url}
+                <label>Video Source</label>
+                <CustomSelect
+                  name="video_type"
+                  value={formData.video_type || 'youtube'}
                   onChange={handleChange}
-                  placeholder="https://youtube.com/watch?v=... or https://drive.google.com/file/d/..."
-                  required
+                  options={[
+                    { value: 'youtube', label: 'YouTube' },
+                    { value: 'cloudinary', label: 'Cloudinary Upload' }
+                  ]}
                 />
-                <small>Paste any Google Drive URL - file ID Will Be Automatically Extracted For Reliable Thumbnails</small>
               </div>
+
+              {formData.video_type === 'youtube' && (
+                <div className="form-group">
+                  <label>YouTube Video URL</label>
+                  <input
+                    type="url"
+                    name="video_url"
+                    value={formData.video_url}
+                    onChange={handleChange}
+                    placeholder="https://youtube.com/watch?v=..."
+                    required
+                  />
+                </div>
+              )}
+
+              {formData.video_type === 'cloudinary' && (
+                <div className="form-group">
+                  <label>Upload Video File</label>
+                  <input
+                    type="file"
+                    name="video_file"
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                    disabled={uploadingVideo}
+                  />
+                  {uploadingVideo && <div>Uploading Video...</div>}
+                </div>
+              )}
 
               {formData.video_url && (
                 <div className="video-preview">
                   <label>Preview</label>
-                  {isEmbeddable(formData.video_url) || getGoogleDriveUrls.isDriveUrl(formData.video_url) ? (
+                  {formData.video_type === 'youtube' ? (
                     <iframe
-                      src={getGoogleDriveUrls.isDriveUrl(formData.video_url) ? 
-                        getGoogleDriveUrls.embed(getGoogleDriveUrls.extractId(formData.video_url)) : 
-                        getEmbedUrl(formData.video_url)}
+                      src={getEmbedUrl(formData.video_url)}
                       title="Video Preview"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -413,15 +463,15 @@ export default function EditsManager() {
               </div>
 
               <div className="form-group">
-                <label>Thumbnail URL (Optional - Auto-Generated From Google Drive If Not Provided)</label>
+                <label>Thumbnail URL (Optional - Auto-Generated From Cloudinary If Not Provided)</label>
                 <input
                   type="url"
                   name="thumbnail_url"
                   value={formData.thumbnail_url}
                   onChange={handleChange}
-                  placeholder="https://drive.google.com/file/d/... Or Leave Empty For Auto-Generation"
+                  placeholder="https://res.cloudinary.com/... Or Leave Empty For Auto-Generation"
                 />
-                <small>Paste Google Drive URL Or Leave Empty - Thumbnail Will Be Auto-Generated From Video</small>
+                <small>Paste Cloudinary URL or Leave Empty - Auto-Generated From Video Upload</small>
               </div>
 
               <div className="form-row">
@@ -432,9 +482,9 @@ export default function EditsManager() {
                     name="before_url"
                     value={formData.before_url}
                     onChange={handleChange}
-                    placeholder="https://drive.google.com/file/d/..."
+                    placeholder="https://res.cloudinary.com/... Or Leave Empty"
                   />
-                  <small>Paste Google Drive URL For Before Image</small>
+                  <small>Paste Cloudinary URL For Before Image</small>
                 </div>
 
                 <div className="form-group">
@@ -444,9 +494,9 @@ export default function EditsManager() {
                     name="after_url"
                     value={formData.after_url}
                     onChange={handleChange}
-                    placeholder="https://drive.google.com/file/d/..."
+                    placeholder="https://res.cloudinary.com/... Or Leave Empty"
                   />
-                  <small>Paste Google Drive URL For After Image</small>
+                  <small>Paste Cloudinary URL For After Image</small>
                 </div>
               </div>
 

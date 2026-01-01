@@ -1,38 +1,22 @@
+// Helper To Format Video Type As Pascal Case
+const toPascalCase = (str) => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
 import React, { useState, useEffect } from 'react';
-import { getVideos, createVideo, updateVideo, deleteVideo, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getVideos, createVideo, updateVideo, deleteVideo, API_URL } from '../services/Api.js';
 import './Manager.css';
 import CustomSelect from './CustomSelect.jsx';
 
-// Helper To Get Full URL
+// Helper To Get Full URL (Cloudinary only)
 const getFullUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${API_URL}${url}`;
+  return url;
 };
 
-// Helper To Get Preview Thumbnail URL For Grid
+// Helper To Get Preview Thumbnail (Cloudinary only)
 const getPreviewThumbnail = (video) => {
-  // Priority 1: Use Google Drive file ID If Available
-  if (video.drive_file_id) {
-    return getGoogleDriveUrls.thumbnail(video.drive_file_id, 800);
-  }
-  
-  // Priority 2: Use Existing Thumbnail
   if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
-  
-  // Priority 3: Generate From Video Type
-  if (video.video_type === 'youtube' && video.video_url) {
-    const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
-    const id = match ? match[1] : null;
-    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-  }
-  
-  // Priority 4: Try To Extract Google Drive ID From URL
-  if ((video.video_type === 'gdrive' || video.video_url?.includes('drive.google.com')) && video.video_url) {
-    const fileId = getGoogleDriveUrls.extractId(video.video_url);
-    if (fileId) return getGoogleDriveUrls.thumbnail(fileId, 800);
-  }
-  
   return null;
 };
 
@@ -40,6 +24,8 @@ export default function VideosManager() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [videoFile, setVideoFile] = useState(null);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showModal, setShowModal] = useState(false);
@@ -147,18 +133,6 @@ export default function VideosManager() {
     if (type === 'youtube') {
       const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
       return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : null;
-    } else if (type === 'gdrive') {
-      // Google Drive: Extract File ID And Create Embed URL
-      const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (fileId) {
-        return `https://drive.google.com/file/d/${fileId[1]}/preview`;
-      }
-      // Also Support Direct File IDs
-      const directId = url.match(/id=([a-zA-Z0-9_-]+)/);
-      if (directId) {
-        return `https://drive.google.com/file/d/${directId[1]}/preview`;
-      }
-      return url;
     }
     // For Direct/mp4 Links, Return As-Is
     return url;
@@ -208,6 +182,34 @@ export default function VideosManager() {
     } catch (error) {
       console.error('Toggle Error:', error);
       showMessage('error', 'Failed To Update Video');
+    }
+  };
+
+  // Handle Cloudinary Video Upload
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setVideoFile(file);
+    setUploadingVideo(true);
+    try {
+      const formDataData = new FormData();
+      formDataData.append('file', file);
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`${API_URL}/api/videos/upload-video`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formDataData
+      });
+      if (!res.ok) throw new Error('Video Upload Failed');
+      const data = await res.json();
+      setFormData(prev => ({ ...prev, video_url: data.video_url }));
+      showMessage('success', 'Video Uploaded!');
+    } catch (err) {
+      showMessage('error', 'Failed To Upload Video');
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -277,7 +279,7 @@ export default function VideosManager() {
                     );
                   }
                 })()}
-                <span className="video-type-badge">{video.video_type}</span>
+                <span className="video-type-badge">{toPascalCase(video.video_type)}</span>
                 <div className="item-overlay">
                   <button className="edit-btn" onClick={() => openModal(video)}>Edit</button>
                   <button className="delete-btn" onClick={() => handleDelete(video._id)}>Delete</button>
@@ -325,47 +327,37 @@ export default function VideosManager() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Video Type</label>
+                  <label>Video Source</label>
                   <CustomSelect
                     name="video_type"
                     value={formData.video_type}
                     onChange={handleChange}
                     options={[
                       { value: 'youtube', label: 'YouTube' },
-                      { value: 'gdrive', label: 'Google Drive' },
-                      { value: 'direct', label: 'Direct URL / MP4' },
-                      { value: 'upload', label: 'Upload Video File' }
+                      { value: 'cloudinary', label: 'Cloudinary Upload' }
                     ]}
                   />
                 </div>
 
-                <div className="form-group flex-2">
-                  <label>Video URL</label>
-                  <small style={{color: '#888', display: 'block', marginBottom: '8px'}}>
-                    {formData.video_type === 'youtube' && 'YouTube URL or video ID'}
-                    {formData.video_type === 'gdrive' && 'Google Drive link (Any Format) Or File ID'}
-                    {formData.video_type === 'direct' && 'Direct Video File URL'}
-                    {formData.video_type === 'upload' && 'Use Google Drive Instead - Paste Drive URL Here'}
-                      </small>
-                      <input
-                        type="text"
-                        name="video_url"
-                        value={formData.video_url}
-                        onChange={handleChange}
-                        placeholder={
-                          formData.video_type === 'youtube' ? 'https://youtube.com/watch?v=... Or Video ID' :
-                          formData.video_type === 'gdrive' ? 'https://drive.google.com/file/d/.../view Or File ID' :
-                          'https://example.com/video.mp4'
-                        }
-                        required
-                      />
-                </div>
+                {formData.video_type === 'cloudinary' && (
+                  <div className="form-group flex-2">
+                    <label>Upload Video File</label>
+                    <input
+                      type="file"
+                      name="video_file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      disabled={uploadingVideo}
+                    />
+                    {uploadingVideo && <div>Uploading Video...</div>}
+                  </div>
+                )}
               </div>
 
               {formData.video_url && (
                 <div className="video-preview">
                   <label>Preview</label>
-                  {(formData.video_type === 'youtube' || formData.video_type === 'gdrive') ? (
+                  {formData.video_type === 'youtube' ? (
                     <iframe
                       src={getEmbedUrl(formData.video_url, formData.video_type)}
                       title="Video Preview"
@@ -405,15 +397,15 @@ export default function VideosManager() {
               </div>
 
               <div className="form-group">
-                <label>Thumbnail URL (Optional - Auto-Generated From Google Drive)</label>
+                <label>Thumbnail URL (Optional - Auto-Generated From Cloudinary)</label>
                 <input
                   type="url"
                   name="thumbnail_url"
                   value={formData.thumbnail_url}
                   onChange={handleChange}
-                  placeholder="https://drive.google.com/file/d/... Or Leave Empty"
+                  placeholder="https://res.cloudinary.com/... Or Leave Empty"
                 />
-                <small>Paste Google Drive URL or Leave Empty - Auto-Generated From Video File ID</small>
+                <small>Paste Cloudinary URL or Leave Empty - Auto-Generated From Video Upload</small>
               </div>
 
               <div className="form-group">

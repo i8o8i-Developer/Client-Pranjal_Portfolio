@@ -1,27 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getProfile, updateProfile, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getProfile, updateProfile, createProfile, API_URL } from '../services/Api.js';
 import './Manager.css';
 
-// Helper To Get Full URL
-const getFullUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${API_URL}${url}`;
-};
-
-// Helper To Get Profile Image URL With Google Drive Support
+// Helper To Get Profile Image URL (Cloudinary Or Direct)
 const getProfileImageUrl = (profile) => {
-  // Check For Dedicated drive_file_id Field First
-  if (profile.profile_drive_id) {
-    return getGoogleDriveUrls.thumbnail(profile.profile_drive_id, 800);
-  }
-  // Try To Extract File ID From profile_image URL If It's A Google Drive URL
   if (profile.profile_image) {
-    const extractedId = getGoogleDriveUrls.extractId(profile.profile_image);
-    if (extractedId) {
-      return getGoogleDriveUrls.thumbnail(extractedId, 800);
-    }
-    return getFullUrl(profile.profile_image);
+    return profile.profile_image;
   }
   return '';
 };
@@ -47,6 +31,8 @@ export default function ProfileManager() {
   const [newSkill, setNewSkill] = useState('');
   const [newBrand, setNewBrand] = useState('');
   const [newSoftware, setNewSoftware] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -89,7 +75,80 @@ export default function ProfileManager() {
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  // handleImageUpload removed - paste Google Drive URL directly in profile_image field
+  // Handle Cloudinary Image Upload
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
+    setUploadingImage(true);
+    try {
+      // Try Upload, Auto-Create Profile if Needed
+      let uploadAttempted = false;
+      let uploadSuccess = false;
+      let lastError = null;
+      for (let attempt = 0; attempt < 2 && !uploadSuccess; attempt++) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const token = localStorage.getItem('admin_token');
+        const res = await fetch(`${API_URL}/api/profile/upload-image`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: formData
+        });
+        uploadAttempted = true;
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(prev => ({ ...prev, profile_image: data.profile_image }));
+          showMessage('success', 'Profile Image Uploaded!');
+          uploadSuccess = true;
+          break;
+        } else {
+          let errorMsg = 'Failed To Upload Image';
+          let errData = null;
+          try {
+            errData = await res.json();
+          } catch {}
+          if (errData && errData.detail && errData.detail.includes('Profile Not Found')) {
+            // Auto-Create Profile With Minimal/Default Data
+            try {
+              await createProfile({
+                full_name: profile.full_name || 'Your Name',
+                tagline: profile.tagline || '',
+                bio: profile.bio || '',
+                skills: profile.skills || [],
+                experience: profile.experience || '',
+                brands: profile.brands || [],
+                software: profile.software || [],
+                social_instagram: profile.social_instagram || '',
+                social_youtube: profile.social_youtube || '',
+                social_vimeo: profile.social_vimeo || '',
+                social_behance: profile.social_behance || ''
+              });
+              // Try Upload Again
+              continue;
+            } catch (createErr) {
+              errorMsg = 'Failed To Auto-Create Profile';
+              lastError = createErr;
+              break;
+            }
+          } else {
+            lastError = errData;
+            showMessage('error', errorMsg);
+            break;
+          }
+        }
+      }
+      if (!uploadSuccess && lastError) {
+        showMessage('error', 'Failed To Upload Image');
+      }
+    } catch (err) {
+      showMessage('error', 'Failed To Upload Image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const addSkill = () => {
     if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
@@ -181,18 +240,19 @@ export default function ProfileManager() {
         <div className="form-section">
           <h3>Profile Image</h3>
           <div className="form-group">
-            <label htmlFor="profile_image">Profile Image URL</label>
+            <label htmlFor="profile_image">Upload Profile Image</label>
             <input
-              type="url"
+              type="file"
               id="profile_image"
               name="profile_image"
-              value={profile.profile_image}
-              onChange={handleChange}
-              placeholder="https://drive.google.com/file/d/..."
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
             />
-            <small>Paste Google Drive URL For Profile Image</small>
+            <small>Upload An Image (Cloudinary)</small>
           </div>
-          {(profile.profile_image || profile.profile_drive_id) && (
+          {uploadingImage && <div>Uploading Image...</div>}
+          {profile.profile_image && (
             <div className="image-preview" style={{ marginTop: '1rem', maxWidth: '200px' }}>
               <img src={getProfileImageUrl(profile)} alt="Profile" style={{ width: '100%', borderRadius: '8px' }} />
             </div>

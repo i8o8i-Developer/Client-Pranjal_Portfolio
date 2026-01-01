@@ -1,35 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getPhotos, getPhotoCategories, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getPhotos, getPhotoCategories, API_URL } from '../services/Api.js';
 import './Photography.css';
 
-// Helper To Get Full URL For Images (Supports Google Drive)
+// Helper To Get Full URL For Images (Cloudinary Only)
 const getFullImageUrl = (photo) => {
   if (!photo) return '';
-  
-  // If Has Google Drive File ID, Use It
-  if (photo.drive_file_id) {
-    return getGoogleDriveUrls.direct(photo.drive_file_id);
-  }
-  
-  // Otherwise Use Regular URL
   const url = photo.image_url || photo;
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${API_URL}${url}`;
+  return url;
 };
 
-// Helper To Get Thumbnail URL
+// Helper To Get Thumbnail URL (Cloudinary only)
 const getThumbnailUrl = (photo, size = 800) => {
   if (!photo) return '';
-  
-  // If Has Google Drive File ID, Generate Thumbnail
-  if (photo.drive_file_id) {
-    return getGoogleDriveUrls.thumbnail(photo.drive_file_id, size);
-  }
-  
-  // Use Existing Thumbnail Or Fallback To Image URL
-  if (photo.thumbnail_url) return getFullImageUrl({ image_url: photo.thumbnail_url });
+  if (photo.thumbnail_url) return photo.thumbnail_url;
   return getFullImageUrl(photo);
 };
 

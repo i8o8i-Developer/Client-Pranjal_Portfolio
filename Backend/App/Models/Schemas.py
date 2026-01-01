@@ -28,8 +28,7 @@ class ProfileBase(BaseModel):
     full_name: str
     tagline: str
     bio: str
-    profile_image: Optional[str] = None  # Can Be URL Or Google Drive File ID
-    profile_drive_id: Optional[str] = None  # Google Drive File ID For Profile Image
+    profile_image: Optional[str] = None  # Cloudinary URL
     skills: List[str] = []
     experience: Optional[str] = None
     brands: List[str] = []
@@ -70,9 +69,8 @@ class PhotoProjectBase(BaseModel):
     title: str
     description: str
     category: str
-    image_url: str  # Can Be Google Drive URL Or File ID
-    thumbnail_url: Optional[str] = None
-    drive_file_id: Optional[str] = None  # Google Drive File ID For Direct Access
+    image_url: str  # Cloudinary URL
+    thumbnail_url: Optional[str] = None  # Cloudinary URL
     tags: List[str] = []
     published: bool = True
     order: int = 0
@@ -88,7 +86,6 @@ class PhotoProjectUpdate(BaseModel):
     category: Optional[str] = None
     image_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
-    drive_file_id: Optional[str] = None
     tags: Optional[List[str]] = None
     published: Optional[bool] = None
     order: Optional[int] = None
@@ -115,10 +112,9 @@ class PhotoProject(PhotoProjectBase):
 class VideoProjectBase(BaseModel):
     title: str
     description: str
-    video_type: str  # Youtube, Vimeo, Gdrive, Mp4
-    video_url: str  # Can Be YouTube URL, Vimeo URL, Or Google Drive File ID
-    thumbnail_url: Optional[str] = None
-    drive_file_id: Optional[str] = None  # Google Drive File ID For Gdrive Type
+    video_type: str  # Youtube, Vimeo, Cloudinary, Mp4
+    video_url: str  # Cloudinary URL, YouTube, Vimeo
+    thumbnail_url: Optional[str] = None  # Cloudinary URL
     category: Optional[str] = None
     tags: List[str] = []
     published: bool = True
@@ -135,7 +131,6 @@ class VideoProjectUpdate(BaseModel):
     video_type: Optional[str] = None
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
-    drive_file_id: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     published: Optional[bool] = None
@@ -163,13 +158,10 @@ class VideoProject(VideoProjectBase):
 class EditProjectBase(BaseModel):
     title: str
     description: str
-    video_url: str  # Can Be YouTube URL Or Google Drive File ID
-    thumbnail_url: Optional[str] = None
-    before_url: Optional[str] = None  # Can Be Google Drive File ID
-    after_url: Optional[str] = None  # Can Be Google Drive File ID
-    drive_file_id: Optional[str] = None  # Google Drive File ID For Video
-    before_drive_id: Optional[str] = None  # Google Drive File ID For Before Image
-    after_drive_id: Optional[str] = None  # Google Drive File ID For After Image
+    video_url: str  # Cloudinary URL, YouTube
+    thumbnail_url: Optional[str] = None  # Cloudinary URL
+    before_url: Optional[str] = None  # Cloudinary URL
+    after_url: Optional[str] = None  # Cloudinary URL
     category: Optional[str] = None
     tags: List[str] = []
     published: bool = True
@@ -188,9 +180,6 @@ class EditProjectUpdate(BaseModel):
     thumbnail_url: Optional[str] = None
     before_url: Optional[str] = None
     after_url: Optional[str] = None
-    drive_file_id: Optional[str] = None
-    before_drive_id: Optional[str] = None
-    after_drive_id: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[List[str]] = None
     published: Optional[bool] = None

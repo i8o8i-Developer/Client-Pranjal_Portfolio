@@ -1,38 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getVideos, getVideoCategories, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getVideos, getVideoCategories, API_URL } from '../services/Api.js';
 import './Photography.css';
 
-// Helper To Get Full URL For Images
+// Helper To Get Full URL For Videos (Cloudinary Only)
 const getFullUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${API_URL}${url}`;
+  return url;
 };
 
-// Helper To Get Preview Thumbnail URL For Grid
+// Helper To Get Preview Thumbnail (Cloudinary Or YouTube)
 const getPreviewThumbnail = (video) => {
-  // Priority 1: Use Google Drive file ID If Available
-  if (video.drive_file_id) {
-    return getGoogleDriveUrls.thumbnail(video.drive_file_id, 800);
-  }
-  
-  // Priority 2: Use Existing Thumbnail
   if (video.thumbnail_url) return getFullUrl(video.thumbnail_url);
-  
-  // Priority 3: Generate From Video Type
-  if (video.video_type === 'youtube' && video.video_url) {
+  // YouTube: Auto-Generate Thumbnail
+  if (video.video_url && (video.video_url.includes('youtube.com') || video.video_url.includes('youtu.be'))) {
     const match = video.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
     const id = match ? match[1] : null;
     if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
   }
-  
-  // Priority 4: Try To Extract Google Drive ID From URL
-  if ((video.video_type === 'gdrive' || video.video_url?.includes('drive.google.com')) && video.video_url) {
-    const fileId = getGoogleDriveUrls.extractId(video.video_url);
-    if (fileId) return getGoogleDriveUrls.thumbnail(fileId, 800);
+  // Cloudinary Fallback: Try To Get A Frame From The Video (Cloudinary Auto-Generates Thumbnails For Videos)
+  if (video.video_url && video.video_url.includes('cloudinary.com')) {
+    // Try To Replace "/upload/" With "/upload/so_2/" To Get A Frame At 2 Seconds
+    return video.video_url.replace('/upload/', '/upload/so_2/').replace(/\.(mp4|webm|mov)(\?.*)?$/, '.jpg');
   }
-  
   return null;
 };
 
@@ -81,31 +71,17 @@ export default function Videography() {
   };
 
   const getEmbedUrl = (video) => {
-    const { video_type, video_url, drive_file_id } = video;
-
-    // Priority 1: Use Google Drive file ID If Available
-    if (drive_file_id) {
-      return getGoogleDriveUrls.embed(drive_file_id);
-    }
-
-    // Priority 2: Handle Based On Video Type
+    const { video_type, video_url } = video;
     if (video_type === 'youtube') {
       const videoId = video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
       return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : video_url;
-    } else if (video_type === 'gdrive' || video_url?.includes('drive.google.com')) {
-      const fileId = getGoogleDriveUrls.extractId(video_url);
-      if (fileId) {
-        return getGoogleDriveUrls.embed(fileId);
-      }
-      return video_url;
     }
-    
     // For Direct/Upload Types, Return Full URL
     return getFullUrl(video_url);
   };
 
   const isEmbeddable = (videoType) => {
-    return videoType === 'youtube' || videoType === 'gdrive';
+    return videoType === 'youtube';
   };
 
   return (
@@ -165,31 +141,23 @@ export default function Videography() {
                   {(() => {
                     const thumb = getPreviewThumbnail(video);
                     if (thumb) {
-                      return <img src={thumb} alt={video.title} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />;
-                    } else if (video.video_url) {
                       return (
-                        <div className="video-preview-outer">
-                          <video
-                            className="video-preview"
-                            src={getFullUrl(video.video_url)}
-                            controls={false}
-                            preload="metadata"
-                            onMouseOver={e => e.target.play()}
-                            onMouseOut={e => e.target.pause()}
-                          />
+                        <div className="video-thumbnail-preview" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setSelectedVideo(video); }}>
+                          <img src={thumb} alt={video.title} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />
                         </div>
                       );
                     } else {
                       return (
-                        <div className="video-placeholder">
-                          <span>▶</span>
+                        <div className="video-placeholder" style={{ width: '100%', aspectRatio: '16/9', background: '#181818', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setSelectedVideo(video); }}>
+                          {/* No Play Icon, Just Placeholder */}
                         </div>
                       );
                     }
                   })()}
                   <div className="photo-overlay">
                     <h3>{video.title}</h3>
-                    <p>{video.category || video.video_type}</p>
+                    <p>{video.category}</p>
+                    {/* Removed Video-Type-Badge */}
                   </div>
                 </motion.div>
               ))}

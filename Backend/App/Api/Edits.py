@@ -7,6 +7,20 @@ from App.Api.Auth import get_current_user
 from datetime import datetime
 
 router = APIRouter()
+# Cloudinary Upload Endpoint For Video Edits
+from fastapi import UploadFile, File
+@router.post("/upload-video")
+async def upload_edit_video(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user)
+):
+    from App.Core.CloudinaryUtil import cloudinary
+    result = cloudinary.uploader.upload(
+        await file.read(),
+        folder="edit_videos",
+        resource_type="video"
+    )
+    return {"video_url": result["secure_url"]}
 
 
 @router.get("", response_model=List[EditProject])

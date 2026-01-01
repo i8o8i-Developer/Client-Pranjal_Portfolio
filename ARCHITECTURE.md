@@ -1,4 +1,5 @@
-# 🏗️ Google Drive Integration Architecture
+# Cloudinary/YouTube Media Architecture
+
 
 ## System Overview
 
@@ -12,104 +13,95 @@
 │  └──────┬───────┘           └──────┬───────┘                    │
 │         │                          │                            │
 └─────────┼──────────────────────────┼────────────────────────────┘
-          │                          │
-          │ API Calls                │ API Calls
-          │                          │
-          ▼                          ▼
+        │                          │
+        │ API Calls                │ API Calls
+        │                          │
+        ▼                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    BACKEND API (FastAPI)                        │
 │                                                                 │
 │  ┌───────────────┐  ┌──────────────┐  ┌──────────────────┐      │
-│  │ Videos API    │  │ Photos API   │  │ Media API        │      │
-│  │               │  │              │  │ (Google Drive)   │      │
+│  │ Videos API    │  │ Photos API   │  │ Edits API        │      │
+│  │               │  │              │  │                  │      │
 │  └───────┬───────┘  └──────┬───────┘  └─────────┬────────┘      │
 │          │                 │                    │               │
 │          └─────────────────┼────────────────────┘               │
 │                            │                                    │
 │                            ▼                                    │
 │                  ┌──────────────────┐                           │
-│                  │ GoogleDrive      │                           │
-│                  │ Service Module   │                           │
+│                  │ Media Storage    │                           │
+│                  │ (Cloudinary/     │                           │
+│                  │  YouTube)        │                           │
 │                  └────────┬─────────┘                           │
 │                           │                                     │
 └───────────────────────────┼─────────────────────────────────────┘
-                            │
-            ┌───────────────┼───────────────┐
-            │               │               │
-            ▼               ▼               ▼
-    ┌──────────────┐ ┌─────────────┐ ┌────────────────┐
-    │   MongoDB    │ │Google Drive │ │ Google Drive   │
-    │   Database   │ │    API      │ │   Storage      │
-    │              │ │             │ │                │
-    │ Stores:      │ │ Provides:   │ │ Stores:        │
-    │ - File IDs   │ │ - Auth      │ │ - Images       │
-    │ - Metadata   │ │ - URLs      │ │ - Videos       │
-    │ - Titles     │ │ - Thumbnails│ │ - Files        │
-    └──────────────┘ └─────────────┘ └────────────────┘
+                     │
+         ┌───────────────┼───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+   ┌──────────────┐ ┌─────────────┐ ┌────────────────┐
+   │   MongoDB    │ │ Cloudinary  │ │ YouTube        │
+   │   Database   │ │   API       │ │   API          │
+   │              │ │             │ │                │
+   │ Stores:      │ │ Stores:     │ │ Stores:        │
+   │ - URLs       │ │ - Images    │ │ - Videos       │
+   │ - Metadata   │ │ - Videos    │ │                │
+   │ - Titles     │ │             │ │                │
+   └──────────────┘ └─────────────┘ └────────────────┘
 ```
 
 ---
 
-## Data Flow: Adding a Photo
+
+## Data Flow: Adding Media (Photo/Video)
 
 ```
-ADMIN PANEL                    BACKEND                      GOOGLE DRIVE
+ADMIN PANEL                    BACKEND                      CLOUDINARY/YOUTUBE
 ────────────                  ──────────                   ──────────────
 
-1. Upload To Drive ─────────────────────────────────────► Store File
-                                                           Generate ID
-                                                           
-2. Copy Drive URL ◄─────────────────────────────────────  Return Shareable
-   (Contains File ID)                                      URL
+1. Upload To Cloudinary ────────────────────────────────► Store File
+   or Paste YouTube URL                                   Generate URL
 
-3. Paste In Admin
-   Panel Form
-   
-4. Submit ────────────────────► Parse URL
-                                Extract File ID
-                                Generate URLs:
-                                  - Direct
-                                  - Thumbnail  ◄──────────  Google CDN
-                                  - Embed                   Generates
-                                
-5.                              Save To MongoDB:
+2. Get Media URL ◄─────────────────────────────────────  Return URL
+
+3. Fill Admin Form
+
+4. Submit ────────────────────► Validate URL
+                                Generate Preview/Thumb
+                                Save To MongoDB:
                                 {
                                   title: "...",
-                                  drive_file_id: "ABC123",
-                                  image_url: "https://...",
+                                  media_url: "https://...",
                                   thumbnail_url: "https://..."
                                 }
-                                
-6. Success! ◄────────────────  Return Saved Data
+
+5. Success! ◄────────────────  Return Saved Data
 ```
 
 ---
 
-## Data Flow: Viewing Photos on Frontend
+
+## Data Flow: Viewing Media on Frontend
 
 ```
-FRONTEND                       BACKEND                      GOOGLE DRIVE
+FRONTEND                       BACKEND                      CLOUDINARY/YOUTUBE
 ────────                      ──────────                   ──────────────
 
-1. Request photos
-   GET /api/photos ──────────► Query MongoDB
-                                
-2.                              Get Photos With
-                                drive_file_ids
-                                
-3.                              For Each Photo:
-                                - Check If Has drive_file_id
-                                - Generate/Verify URLs
-                                
-4. Receive Photos ◄───────────  Return Photos Array
-   With URLs                    
+1. Request media
+   GET /api/photos|videos|edits ────────► Query MongoDB
+                                        
+2.                                    Get Media URLs
+                                        
+3.                                    Return Media Array
+                                        
+4. Receive Media ◄────────────────────  Return Media Array
+   With URLs                            
    
-5. Display Photos
-   Using Thumbnail URLs ─────────────────────────────────► Google CDN
-                                                           Serves Image
-6. Image Loads ◄────────────────────────────────────────  Fast Delivery
-   Fast From Google CDN                                    From Nearest
-                                                           Server
+5. Display Media
+   Using Thumbnail URLs ──────────────► Cloudinary CDN/YouTube
+                                        Serves Image/Video
+6. Media Loads ◄─────────────────────  Fast Delivery
+   Fast From Cloudinary CDN/YouTube      From Nearest Server
 ```
 
 ---
@@ -129,16 +121,16 @@ Backend/
 │   │   ├── Config.py ──────────────────┐ Settings & Environment
 │   │   ├── Database.py ─────────────┐  │ Variables
 │   │   ├── Security.py              │  │
-│   │   └── GoogleDrive.py ◄─────────┼──┘ NEW! Drive Integration
+│   │   └── Cloudinary.py ◄─────────┼──┘ NEW! Cloudinary Integration
 │   │                                │
 │   ├── Models/                      │
-│   │   └── Schemas.py ◄─────────────┘    Updated With drive_file_id
+│   │   └── Schemas.py ◄─────────────┘    Updated With media_url
 │   │
 │   ├── Api/
-│   │   ├── Videos.py ◄──────────────┐    Uses GoogleDrive Service
+│   │   ├── Videos.py ◄──────────────┐    Uses Cloudinary Service
 │   │   ├── Photos.py ◄──────────────┤    To Process URLs
 │   │   ├── Edits.py                 │
-│   │   └── Media.py ◄───────────────┘    NEW! Drive Endpoints
+│   │   └── Media.py ◄───────────────┘    NEW! Cloudinary Endpoints
 │   │
 │   └── Main.py ─────────────────────────  Registers All Routers
 
@@ -150,11 +142,11 @@ Backend/
 Frontend/Src/
 │
 ├── services/
-│   └── Api.js ◄───────────────────────── Updated With Drive Helpers
+│   └── Api.js ◄───────────────────────── Updated With Cloudinary Helpers
 │
 ├── Pages/
 │   ├── Photography.jsx ◄──────────────┐
-│   ├── Videography.jsx ◄──────────────┤  Use Drive Helpers
+│   ├── Videography.jsx ◄──────────────┤  Use Cloudinary Helpers
 │   └── VideoEditing.jsx ◄─────────────┘  To Display Media
 │
 └── Components/
@@ -164,39 +156,31 @@ Frontend/Src/
 
 ---
 
+
 ## Authentication Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│              SERVICE ACCOUNT AUTHENTICATION                     │
+│              ADMIN AUTHENTICATION (JWT)                         │
 └─────────────────────────────────────────────────────────────────┘
 
 1. Backend Startup
    │
-   ├──► Read service-account.json
-   │    OR
-   └──► Read GOOGLE_SERVICE_ACCOUNT_JSON Env Var
-   
-2. Initialize Google Drive Service
+   └──► Load .env Credentials
+
+2. Admin Login
    │
-   ├──► Parse Credentials
-   ├──► Create Credentials Object
-   └──► Build Drive API v3 Service
-   
-3. Service Ready
+   └──► Obtain JWT Token
+
+3. Authenticated API Calls
    │
-   └──► Can Now Make API Calls To Google Drive
-   
-   
-┌─────────────────────────────────────────────────────────────────┐
-│                  NO USER OAUTH NEEDED!                          │
-│                                                                 │
-│  Service Account Acts On Behalf Of Your App Automatically       │
-│  No User Login Or Permission Popups Required                    │
-└─────────────────────────────────────────────────────────────────┘
+   └──► Use JWT For All Admin Actions
+
+No user OAuth or third-party login required.
 ```
 
 ---
+
 
 ## URL Generation Process
 
@@ -204,32 +188,17 @@ Frontend/Src/
 INPUT                          PROCESS                    OUTPUT
 ─────                         ─────────                  ────────
 
-Google Drive URL              Extract File ID            
-https://drive.google.com/     │                         File ID
-file/d/ABC123/view            │                         ───────
-                              │                         ABC123
-                              ▼
-                         Generate URLs                  
-                              │
-            ┌─────────────────┼─────────────────┐
-            │                 │                 │
-            ▼                 ▼                 ▼
-     
-    Direct URL          Thumbnail URL      Embed URL
-    ──────────          ─────────────      ─────────
-    https://            https://           https://
-    drive.google.com/   drive.google.com/  drive.google.com/
-    uc?export=view&     thumbnail?         file/d/ABC123/
-    id=ABC123           id=ABC123&         preview
-                        sz=w800
-    
-    Used For:           Used For:          Used For:
-    - Full Image        - Grid View        - Video Player
-    - Download          - Preview          - Embedding
-    - Direct Access     - Performance      - iframes
+Cloudinary Upload              Get Secure URL             Cloudinary URL
+YouTube URL                    Validate/Embed             YouTube Embed URL
+
+Used For:
+- Full Image/Video
+- Grid View/Preview
+- Video Player (YouTube/Cloudinary)
 ```
 
 ---
+
 
 ## Database Schema Evolution
 
@@ -238,119 +207,34 @@ BEFORE (Old Schema)                 AFTER (New Schema)
 ───────────────────                ──────────────────
 
 VideoProject {                     VideoProject {
-  title: String                      title: String
-  video_type: String                 video_type: String
-  video_url: String ◄────────┐      video_url: String
-  thumbnail_url: String      │      thumbnail_url: String
-}                            │      drive_file_id: String ◄──┐ NEW!
-                             │    }                           │
-                             │                                │
-PhotoProject {               │    PhotoProject {              │
-  title: String              │      title: String             │
-  image_url: String ◄────────┤      image_url: String         │
-  thumbnail_url: String      │      thumbnail_url: String     │
-}                            │      drive_file_id: String ◄───┤ NEW!
-                             │    }                           │
-                             │                                │
-EditProject {                │    EditProject {               │
-  title: String              │      title: String             │
-  video_url: String ◄────────┤      video_url: String         │
-  before_url: String         │      before_url: String        │
-  after_url: String          │      after_url: String         │
-  thumbnail_url: String      │      thumbnail_url: String     │
-}                            │      drive_file_id: String ◄───┤ NEW!
-                             │      before_drive_id: String ◄─┤ NEW!
-                             │      after_drive_id: String ◄──┤ NEW!
-                             │    }                           │
-Profile {                    │                                │
-  profile_image: String ◄────┘    Profile {                   │
-}                                   profile_image: String     │
-                                    profile_drive_id: String ◄┘ NEW!
-                                  }
+   title: String                      title: String
+   video_type: String                 video_type: String
+   video_url: String                  video_url: String
+   thumbnail_url: String              thumbnail_url: String
+}
 
-BACKWARD COMPATIBLE: Old URLs Still Work!
+PhotoProject {                      PhotoProject {
+   title: String                        title: String
+   image_url: String                    image_url: String
+   thumbnail_url: String                thumbnail_url: String
+}
+
+EditProject {                        EditProject {
+   title: String                        title: String
+   video_url: String                    video_url: String
+   before_url: String                   before_url: String
+   after_url: String                    after_url: String
+   thumbnail_url: String                thumbnail_url: String
+}
+
+Profile {                             Profile {
+   profile_image: String                 profile_image: String
+}
 ```
 
 ---
 
-## Deployment Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        PRODUCTION SETUP                         │
-└─────────────────────────────────────────────────────────────────┘
-
-                              INTERNET
-                                 │
-                                 │
-            ┌────────────────────┼────────────────────┐
-            │                    │                    │
-            ▼                    ▼                    ▼
-            
-    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-    │   Frontend   │    │ Admin Panel  │    │   Backend    │
-    │   (Netlify)  │    │  (Netlify)   │    │  (Render)    │
-    │              │    │              │    │              │
-    │ Static Files │    │ Static Files │    │ FastAPI App  │
-    └──────┬───────┘    └──────┬───────┘    └──────┬───────┘
-           │                   │                    │
-           │                   │                    │
-           └───────────────────┼────────────────────┘
-                               │
-                               │ API Calls
-                               │
-            ┌──────────────────┼──────────────────┐
-            │                  │                  │
-            ▼                  ▼                  ▼
-            
-    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-    │   MongoDB    │  │ Google Drive │  │   Google     │
-    │   Atlas      │  │     API      │  │  Cloud IAM   │
-    │   (Free)     │  │              │  │              │
-    └──────────────┘  └──────────────┘  └──────────────┘
-
-    ALL FREE TIER! 💰
-```
-
----
-
-## Performance Optimization
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     CACHING STRATEGY                            │
-└─────────────────────────────────────────────────────────────────┘
-
-Browser Request
-      │
-      ▼
-┌─────────────┐
-│  Browser    │ ◄── Cache Thumbnail URLs
-│  Cache      │     (Long TTL From Google)
-└─────┬───────┘
-      │ Cache Miss
-      ▼
-┌─────────────┐
-│  Google CDN │ ◄── Serves From Nearest Location
-│  Network    │     (Global Distribution)
-└─────┬───────┘
-      │
-      ▼
-┌─────────────┐
-│  Google     │ ◄── Source Files
-│  Drive      │     (Your Storage)
-│  Storage    │
-└─────────────┘
-
-
-Performance Metrics:
-├─ First Load: ~200-500ms (From CDN)
-├─ Cached Load: ~50ms (from Browser)
-├─ Thumbnail Size: 50-200KB (Optimized)
-└─ Success Rate: 99.9%
-```
-
----
 
 ## Security Model
 
@@ -359,17 +243,16 @@ Performance Metrics:
 │                    SECURITY LAYERS                              │
 └─────────────────────────────────────────────────────────────────┘
 
-Layer 1: Service Account
-├─ Credentials Stored Securely
-├─ No User Passwords Involved
-├─ Scoped Permissions (Drive Only)
+Layer 1: Cloudinary/YouTube API Keys
+├─ Credentials Stored Securely in .env
+├─ No User Passwords for Media Storage
+├─ API Keys/Secrets Not in Codebase
 └─ Revocable at Any Time
 
-Layer 2: File Permissions
-├─ Folder Shared With Service Account
-├─ Files Set To "Anyone With Link"
-├─ No Direct Folder Access
-└─ URL-Based Access Only
+Layer 2: Media Access
+├─ Cloudinary URLs are signed/private if needed
+├─ YouTube videos are public/unlisted as required
+└─ No direct file/folder access, only via URLs
 
 Layer 3: Admin Panel
 ├─ JWT Authentication
@@ -380,48 +263,49 @@ Layer 3: Admin Panel
 Layer 4: Environment Variables
 ├─ Credentials Not In Code
 ├─ .gitignore Protection
-├─ Netlify Env Vars Encrypted
-└─ Production Secrets Isolated
+├─ Production Env Vars Encrypted
+└─ Secrets Isolated
 ```
 
 ---
+
 
 ## Error Handling Flow
 
 ```
-Request ──► Backend ──► Google Drive API
-                │              │
-                │              ▼
-                │         ┌─────────┐
-                │         │ Success │
-                │         └────┬────┘
-                │              │
-                └◄─────────────┘
+Request ──► Backend ──► Cloudinary/YouTube API
+            │              │
+            │              ▼
+            │         ┌─────────┐
+            │         │ Success │
+            │         └────┬────┘
+            │              │
+            └◄─────────────┘
                 
                 
 Error Cases:
-├─ Invalid File ID
+├─ Invalid Media URL/ID
 │  └─► Return 404 Not Found
 │
-├─ Permission Denied
+├─ Permission Denied (Cloudinary/YouTube)
 │  └─► Return 403 Forbidden
-│      (Check Folder Sharing)
+│      (Check API Key/URL Privacy)
 │
-├─ Service Account Error
+├─ API Error (Cloudinary/YouTube)
 │  └─► Return 500 Internal Error
-│      (Check Credentials)
+│      (Check Credentials/Quota)
 │
 └─ Network Timeout
    └─► Return 504 Gateway Timeout
-       (Retry Request)
+      (Retry Request)
 ```
 
 ---
 
-This Architecture Provides :
-✅ Scalability
-✅ Performance
-✅ Security
-✅ Reliability
-✅ Zero Cost Hosting
-✅ Easy Maintenance
+This Architecture Provides:
+- Scalability
+- Performance
+- Security
+- Reliability
+- Low/Zero Cost Hosting
+- Easy Maintenance

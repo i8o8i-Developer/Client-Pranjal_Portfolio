@@ -1,77 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getEdits, getEditCategories, getFeaturedEdit, API_URL, getGoogleDriveUrls } from '../services/Api.js';
+import { getEdits, getEditCategories, getFeaturedEdit, API_URL } from '../services/Api.js';
 import './Photography.css';
 
-// Helper To Get Full URL
+// Helper To Get Full URL (Cloudinary Only)
 const getFullUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${API_URL}${url}`;
+  return url;
 };
 
-// Helper To Convert YouTube or Google Drive URL To Embed Format
+// Helper To Convert YouTube URL To Embed Format
 const getEmbedUrl = (videoUrl) => {
   if (!videoUrl) return null;
-  
   if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
     const videoId = videoUrl.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
     return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : videoUrl;
-  } else if (videoUrl.includes('drive.google.com')) {
-    const fileId = videoUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (fileId) {
-      return `https://drive.google.com/file/d/${fileId[1]}/preview`;
-    }
-    const directId = videoUrl.match(/id=([a-zA-Z0-9_-]+)/);
-    if (directId) {
-      return `https://drive.google.com/file/d/${directId[1]}/preview`;
-    }
-    return videoUrl;
   }
   // For Direct URLs, Return Full URL
   return getFullUrl(videoUrl);
 };
 
-// Helper To Get Thumbnail URL With Google Drive Support
+// Helper To Get Thumbnail URL (Cloudinary Or YouTube)
 const getThumbnailUrl = (edit) => {
-  // Priority: drive_file_id > thumbnail_url > video URL extraction
-  if (edit.drive_file_id) {
-    return getGoogleDriveUrls.thumbnail(edit.drive_file_id, 800);
-  }
   if (edit.thumbnail_url) {
     return getFullUrl(edit.thumbnail_url);
   }
-  // Try to generate thumbnail from video URL if it's YouTube
+  // YouTube: Auto-Generate Thumbnail
   if (edit.video_url && (edit.video_url.includes('youtube.com') || edit.video_url.includes('youtu.be'))) {
     const match = edit.video_url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/);
     const id = match ? match[1] : null;
     if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
   }
-  // Try to extract Google Drive ID from URL
-  if (edit.video_url && edit.video_url.includes('drive.google.com')) {
-    const fileId = getGoogleDriveUrls.extractId(edit.video_url);
-    if (fileId) return getGoogleDriveUrls.thumbnail(fileId, 800);
+  // Cloudinary Fallback: Try To Get A Frame From The Video (Cloudinary Auto-Generates Thumbnails For Videos)
+  if (edit.video_url && edit.video_url.includes('cloudinary.com')) {
+    // Try To Replace "/upload/" With "/upload/so_2/" To Get A Frame At 2 Seconds
+    return edit.video_url.replace('/upload/', '/upload/so_2/').replace(/\.(mp4|webm|mov)(\?.*)?$/, '.jpg');
   }
   return null;
 };
 
-// Helper To Get Embed URL With Google Drive Support
+// Helper To Get Embed URL (Cloudinary/YouTube Only)
 const getVideoEmbedUrl = (edit) => {
-  // Priority: drive_file_id > video_url
-  if (edit.drive_file_id) {
-    return getGoogleDriveUrls.embed(edit.drive_file_id);
-  }
   if (edit.video_url) {
     return getEmbedUrl(edit.video_url);
   }
   return null;
 };
 
-// Helper To Get Full Video URL With Google Drive Support
+// Helper To Get Full Video URL (Cloudinary Only)
 const getFullVideoUrl = (edit) => {
-  if (edit.drive_file_id) {
-    return getGoogleDriveUrls.direct(edit.drive_file_id);
-  }
   return getFullUrl(edit.video_url);
 };
 
@@ -81,6 +58,7 @@ export default function VideoEditing() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [featuredEdit, setFeaturedEdit] = useState(null);
   const [selectedEdit, setSelectedEdit] = useState(null);
+  const [showreelModalOpen, setShowreelModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -127,7 +105,7 @@ export default function VideoEditing() {
   };
 
   const isEmbeddable = (videoUrl) => {
-    return videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('drive.google.com'));
+    return videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
   };
 
   return (
@@ -162,19 +140,75 @@ export default function VideoEditing() {
             >
               <h2>Featured Showreel</h2>
               <div className="video-wrapper">
-                <iframe
-                  src={getVideoEmbedUrl(featuredEdit)}
-                  title={featuredEdit.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                {(() => {
+                  const thumb = getThumbnailUrl(featuredEdit);
+                  if (thumb) {
+                    return (
+                      <div style={{ cursor: 'pointer' }} onClick={() => setShowreelModalOpen(true)}>
+                        <img src={thumb} alt={featuredEdit.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="video-placeholder-large" style={{ width: '100%', aspectRatio: '16/9', background: '#181818', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShowreelModalOpen(true)}>
+                        {/* No Play Icon, Just Placeholder */}
+                      </div>
+                    );
+                  }
+                })()}
               </div>
               <div className="featured-info">
                 <h3>{featuredEdit.title}</h3>
                 <p>{featuredEdit.description}</p>
+                {/* Removed Video-Type-Badge */}
               </div>
             </motion.div>
+            {showreelModalOpen && (
+              <div className="modal" onClick={() => setShowreelModalOpen(false)}>
+                <div className="modal-content video-modal" onClick={e => e.stopPropagation()}>
+                  <button className="modal-close" onClick={() => setShowreelModalOpen(false)}>
+                    ×
+                  </button>
+                  <div className="modal-video-center">
+                    <div className="modal-video-aspect">
+                      {isEmbeddable(featuredEdit.video_url) ? (
+                        <iframe
+                          src={getVideoEmbedUrl(featuredEdit)}
+                          title={featuredEdit.title}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
+                        />
+                      ) : (featuredEdit.video_url) ? (
+                        <video
+                          controls
+                          src={getFullVideoUrl(featuredEdit)}
+                          style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
+                        />
+                      ) : (
+                        <div className="video-placeholder-large">
+                          <span>▶</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="modal-info">
+                    <h2 style={{ fontSize: '2.2rem', marginBottom: '1rem' }}>{featuredEdit.title}</h2>
+                    <p style={{ fontSize: '1.15rem', color: '#ccc', marginBottom: '1rem' }}>{featuredEdit.description}</p>
+                    {featuredEdit.tags && featuredEdit.tags.length > 0 && (
+                      <div className="tags">
+                        {featuredEdit.tags.map((tag, index) => (
+                          <span key={index} className="tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -217,24 +251,15 @@ export default function VideoEditing() {
                     {(() => {
                       const thumb = getThumbnailUrl(edit);
                       if (thumb) {
-                        return <img src={thumb} alt={edit.title} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />;
-                      } else if (edit.video_url || edit.drive_file_id) {
                         return (
-                          <div className="video-preview-outer">
-                            <video
-                              className="video-preview"
-                              src={getFullVideoUrl(edit)}
-                              controls={false}
-                              preload="metadata"
-                              onMouseOver={e => e.target.play()}
-                              onMouseOut={e => e.target.pause()}
-                            />
+                          <div className="video-thumbnail-preview" style={{ cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setSelectedEdit(edit); }}>
+                            <img src={thumb} alt={edit.title} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '10px' }} />
                           </div>
                         );
                       } else {
                         return (
-                          <div className="video-placeholder">
-                            <span>▶</span>
+                          <div className="video-placeholder" style={{ width: '100%', aspectRatio: '16/9', background: '#181818', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setSelectedEdit(edit); }}>
+                            {/* No play icon, just placeholder */}
                           </div>
                         );
                       }
@@ -242,6 +267,7 @@ export default function VideoEditing() {
                     <div className="photo-overlay">
                       <h3>{edit.title}</h3>
                       {edit.category && <p>{edit.category}</p>}
+                      {/* Removed video-type-badge */}
                     </div>
                   </motion.div>
                 ))}
@@ -259,7 +285,7 @@ export default function VideoEditing() {
             </button>
             <div className="modal-video-center">
               <div className="modal-video-aspect">
-                {isEmbeddable(selectedEdit.video_url) || selectedEdit.drive_file_id ? (
+                {isEmbeddable(selectedEdit.video_url) ? (
                   <iframe
                     src={getVideoEmbedUrl(selectedEdit)}
                     title={selectedEdit.title}
@@ -268,7 +294,7 @@ export default function VideoEditing() {
                     allowFullScreen
                     style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}
                   />
-                ) : (selectedEdit.video_url || selectedEdit.drive_file_id) ? (
+                ) : (selectedEdit.video_url) ? (
                   <video
                     controls
                     src={getFullVideoUrl(selectedEdit)}
