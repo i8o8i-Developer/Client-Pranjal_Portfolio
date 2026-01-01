@@ -186,6 +186,7 @@ export default function Videography() {
                 ) : selectedVideo.video_url ? (
                   <video
                     controls
+                    controlsList="nodownload"
                     src={getFullUrl(selectedVideo.video_url)}
                     style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
                   />

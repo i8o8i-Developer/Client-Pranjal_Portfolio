@@ -204,6 +204,16 @@
   font-weight: 700;
   text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
 }
+
+.admin-credit a {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+.admin-credit a:hover {
+  color: var(--color-accent);
+}
+}
 /* END OF PERMANENT CREDIT SECTION */
 
 @media (max-width: 1024px) {

@@ -183,6 +183,7 @@ export default function VideoEditing() {
                       ) : (featuredEdit.video_url) ? (
                         <video
                           controls
+                          controlsList="nodownload"
                           src={getFullVideoUrl(featuredEdit)}
                           style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
                         />
@@ -297,6 +298,7 @@ export default function VideoEditing() {
                 ) : (selectedEdit.video_url) ? (
                   <video
                     controls
+                    controlsList="nodownload"
                     src={getFullVideoUrl(selectedEdit)}
                     style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 4px 32px rgba(0,0,0,0.4)', background: '#222' }}
                   />

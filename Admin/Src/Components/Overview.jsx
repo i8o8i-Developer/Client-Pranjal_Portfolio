@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { MdPhotoCamera, MdMovie, MdContentCut, MdEmail, MdAdd, MdEdit, MdBarChart } from 'react-icons/md';
 import { getPhotos, getVideos, getEdits, getMessages, getAnalyticsStats, getRealtimeVisitors } from '../services/Api.js';
 import './Manager.css';
 
@@ -118,7 +119,7 @@ export default function Overview() {
 
       <div className="stats-grid">
         <div className="stat-card photos">
-          <div className="stat-icon">📷</div>
+          <div className="stat-icon"><MdPhotoCamera /></div>
           <div className="stat-info">
             <span className="stat-number">{stats.photos}</span>
             <span className="stat-label">Photos</span>
@@ -126,7 +127,7 @@ export default function Overview() {
         </div>
 
         <div className="stat-card videos">
-          <div className="stat-icon">🎬</div>
+          <div className="stat-icon"><MdMovie /></div>
           <div className="stat-info">
             <span className="stat-number">{stats.videos}</span>
             <span className="stat-label">Videos</span>
@@ -134,7 +135,7 @@ export default function Overview() {
         </div>
 
         <div className="stat-card edits">
-          <div className="stat-icon">✂️</div>
+          <div className="stat-icon"><MdContentCut /></div>
           <div className="stat-info">
             <span className="stat-number">{stats.edits}</span>
             <span className="stat-label">Video Edits</span>
@@ -142,7 +143,7 @@ export default function Overview() {
         </div>
 
         <div className="stat-card messages">
-          <div className="stat-icon">✉️</div>
+          <div className="stat-icon"><MdEmail /></div>
           <div className="stat-info">
             <span className="stat-number">{stats.messages}</span>
             <span className="stat-label">Messages</span>
@@ -158,19 +159,19 @@ export default function Overview() {
           <h3>Quick Actions</h3>
           <div className="quick-actions">
             <a href="/dashboard/photos" className="action-btn">
-              <span className="action-icon">+</span>
+              <span className="action-icon"><MdAdd /></span>
               Add Photo
             </a>
             <a href="/dashboard/videos" className="action-btn">
-              <span className="action-icon">+</span>
+              <span className="action-icon"><MdAdd /></span>
               Add Video
             </a>
             <a href="/dashboard/edits" className="action-btn">
-              <span className="action-icon">+</span>
+              <span className="action-icon"><MdAdd /></span>
               Add Video Edit
             </a>
             <a href="/dashboard/profile" className="action-btn">
-              <span className="action-icon">✏️</span>
+              <span className="action-icon"><MdEdit /></span>
               Edit Profile
             </a>
           </div>
@@ -200,7 +201,7 @@ export default function Overview() {
 
       <div className="overview-section visitor-analytics">
         <div className="analytics-header">
-          <h3>📊 Page Visitors</h3>
+          <h3><MdBarChart style={{verticalAlign: 'middle'}} /> Page Visitors</h3>
           <div className="realtime-indicator">
             <span className="pulse-dot"></span>
             <span className="active-count">{activeVisitors} Active Now</span>
