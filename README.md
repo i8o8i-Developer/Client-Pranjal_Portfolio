@@ -268,6 +268,6 @@ The Backend Provides Interactive API Documentation:
 
 This Project Is Licensed Under The MIT License - See The [LICENSE](LICENSE) File For Details.
 
-**© 2025 Pranjal Portfolio. All Rights Reserved.**
+**© 2026 Pranjal Portfolio. All Rights Reserved. [ i8o8i Developer ]**
 
 This Portfolio Showcases The Work Of Pranjal, A Talented Photographer, Videographer, And Video Editor. All Content And Media Belongs To Pranjal And Is Protected Under Copyright Law.
